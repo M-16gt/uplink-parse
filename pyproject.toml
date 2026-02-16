@@ -1,0 +1,36 @@
+[project]
+name = "uplink-parse"
+version = "0.1.0"
+description = "Add-on for the uplink library with the ability to parse answers"
+
+license = { file = 'LICENSE' }
+keywords = ['http', 'api', 'rest', 'client', 'retrofit', 'parse', 'parsing', 'response', 'request']
+
+requires-python = ">=3.10"
+dependencies = [
+    "bs4>=0.0.2",
+]
+
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+]
+
+[project.urls]
+Homepage = "https://github.com/M-16gt/uplink-parse"
+Repository = "https://github.com/M-16gt/uplink-parse.git"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.uv]
+dev-dependencies = [
+    "build>=1.0.0",
+    "twine>=4.0.0",
+]
