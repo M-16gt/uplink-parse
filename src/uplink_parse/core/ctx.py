@@ -1,17 +1,10 @@
 from __future__ import annotations
 import contextvars
-from typing import Any, Optional, Self
-from dataclasses import dataclass
+from typing import Optional
+from uplink_parse.core._dataclasses import ScraperCtxData
+from uplink_parse.core.exceptions import NoActiveContextError
 
-import uplink
-
-
-@dataclass
-class ScraperCtxData:
-    response: Any | None = None
-    consumer: Any | None = None
-    scraper: Any | None = None
-
+_cv_builder: contextvars.ContextVar = contextvars.ContextVar("uplink_parse.core.builder", default=None)
 
 _cv_ctx: contextvars.ContextVar[Optional[ScraperCtxData]] = contextvars.ContextVar(
     "uplink_parse.core.ctx", default=None
@@ -23,39 +16,22 @@ class CtxProxy:
     def _get_data() -> ScraperCtxData:
         data = _cv_ctx.get()
         if data is None:
-            raise RuntimeError("No active scraper context.")
+            raise NoActiveContextError("No active scraper context.", source="CtxProxy", context=None)
         return data
 
-    @property
-    def s(self) -> Any: return self._get_data().scraper
-
-    @s.setter
-    def s(self, value: Any) -> None: self._get_data().scraper = value
-
-    @property
-    def r(self) -> Any: return self._get_data().response
-
-    @r.setter
-    def r(self, value: Any) -> None: self._get_data().response = value
-
-    @property
-    def c(self) -> Self: return self._get_data().consumer
-
-    @c.setter
-    def c(self, value: Any) -> None: self._get_data().consumer = value
-
-
-    scraper = s
-    response = r
-    consumer = c
+    def __getattr__(self, item):
+        return getattr(self._get_data(), item)
 
 
 ctx = CtxProxy()
 
 
 class ScraperCtx:
-    def __init__(self, response: Any | None = None, consumer: Any | None = None, scraper: Any | None = None):
-        self.data = ScraperCtxData(response=response, consumer=consumer, scraper=scraper)
+    def __init__(self, **kwargs):
+        builder = _cv_builder.get()
+        if not builder is None:
+            _cv_builder.reset(builder._token)  # noqa
+        self.data = ScraperCtxData(**kwargs | {"builder": builder})
         self.token: Optional[contextvars.Token] = None
 
     def __enter__(self) -> ScraperCtxData:

@@ -1,7 +1,9 @@
+import functools
 from collections import defaultdict
 from typing import Callable, Self
-from uplink_parse.core.utils import _name
+from uplink_parse.core.utils import _name, to_list
 from uplink_parse.core._generics import RegistryGeneric, input_rt_func, output_rt_func
+
 
 
 class BaseRegistry(RegistryGeneric[input_rt_func, output_rt_func]):
@@ -12,8 +14,16 @@ class BaseRegistry(RegistryGeneric[input_rt_func, output_rt_func]):
         cls._registry_with_mro = defaultdict(set)
         cls.__name = _name(cls, "lower", replace=("_", ""))
 
-    def __call__(self, func: Callable[[Self], input_rt_func]) -> Callable[[Self], input_rt_func]:
+    def __call__(self, func: Callable[[Self], input_rt_func] | None = None, hooks = None) -> \
+    Callable[[Self], input_rt_func]:
+        if func is None:
+            return functools.partial(self, hooks=hooks)
+
         self._registry[_name(func.__qualname__.split(".")[0])].add(func.__name__)
+
+        for h in to_list(hooks):
+            func = h(func)
+
         return func
 
     @classmethod

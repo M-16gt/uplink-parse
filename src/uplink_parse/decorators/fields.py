@@ -8,13 +8,11 @@ __all__ = ["fields"]
 class _Fields(BaseProcessor[dict, dict]):
     @staticmethod
     def _populate_target(
-            owner: Any,
-            func_names: set[str],
+            result: dict[str, Any],
             target: dict
     ) -> dict:
-        for func_name in func_names:
-            target.update(getattr(owner, func_name)())
-
+        for d in result.values():
+            target.update(d)
         return target
 
 
