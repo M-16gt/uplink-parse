@@ -1,8 +1,9 @@
 import asyncio
 import inspect
+from typing import Any
+
 from uplink_parse.core.singleton import Singleton
 from uplink_parse.core.exceptions import StrategyNotFoundError
-from typing import Any
 
 
 class BaseTaskStrategy(Singleton):
@@ -35,7 +36,7 @@ class BaseTaskStrategy(Singleton):
                 return strategy()
         raise StrategyNotFoundError(
             f"No BaseTaskStrategy subclass supports target {tgt!r}.",
-            target=tgt,
+            details={"target": tgt},
             source=cls.__name__,
         )
 
@@ -82,12 +83,3 @@ class _FuncSyncStrategy(BaseTaskStrategy):
 
     async def __call__(self, tgt, lst, bs, ut):
         self._flush_batch(lst, [await asyncio.to_thread(tgt) if ut else tgt()])
-
-
-class _UnknownStrategy(BaseTaskStrategy):
-    @staticmethod
-    def is_supported(tgt: Any) -> bool:
-        return True
-
-    async def __call__(self, tgt, lst, bs, ut):
-        lst.append(tgt)

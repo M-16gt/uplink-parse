@@ -12,7 +12,7 @@ class BaseRegistry(RegistryGeneric[input_rt_func, output_rt_func]):
         super().__init_subclass__(**kwargs)
         cls._registry = defaultdict(set)
         cls._registry_with_mro = defaultdict(set)
-        cls.__name = _name(cls, "lower", replace=("_", ""))
+        cls.__name = _name(cls).lower().replace("_", "")
 
     def __call__(self, func: Callable[[Self], input_rt_func] | None = None, hooks = None) -> \
     Callable[[Self], input_rt_func]:

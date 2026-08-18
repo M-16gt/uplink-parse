@@ -2470,6 +2470,7 @@ source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "asgiref" },
+    { name = "attrs" },
     { name = "bs4" },
     { name = "lxml" },
     { name = "parsel" },
@@ -2498,6 +2499,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.5" },
     { name = "asgiref", specifier = ">=3.11.1" },
+    { name = "attrs", specifier = ">=26.1.0" },
     { name = "bs4", specifier = ">=0.0.2" },
     { name = "bs4", marker = "extra == 'html'", specifier = ">=0.0.2" },
     { name = "lxml", specifier = ">=6.0.2" },

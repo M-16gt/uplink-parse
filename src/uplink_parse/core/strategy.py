@@ -2,7 +2,7 @@ from uplink_parse.core.ctx import ctx
 from uplink_parse.core.singleton import Singleton
 from uplink_parse.core._generics import StrategyGeneric, output_data_from_func
 from uplink_parse.core.utils import _name
-from uplink_parse.core.exceptions import UnsupportedClientError
+from uplink_parse.core.exceptions import UnsupportedClientError, ResponseParsingError
 
 
 class Strategy(StrategyGeneric[output_data_from_func], Singleton):
@@ -10,11 +10,19 @@ class Strategy(StrategyGeneric[output_data_from_func], Singleton):
 
     def __call__(self, response) -> output_data_from_func:
         client_name = _name(ctx.consumer._Consumer__client.__class__)  # noqa
+
         try:
-            return self.funcs_dict[client_name](response)
+            handler = self.funcs_dict[client_name]
+            return handler(response)
         except KeyError:
             raise UnsupportedClientError(
                 f"{self.__class__.__name__} has no handler for client '{client_name}'.",
-                client_name=client_name,
+                details={"client_name": client_name},
                 source=self.__class__.__name__,
             ) from None
+        except Exception as exc:
+            raise ResponseParsingError(
+                f"Failed to transform response: {exc}",
+                details={"strategy_name": self.__class__.__name__, "original_exception": exc},
+                source=self.__class__.__name__,
+            ) from exc

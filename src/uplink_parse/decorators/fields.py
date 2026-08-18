@@ -5,7 +5,7 @@ from uplink_parse.core.processor import BaseProcessor
 __all__ = ["fields"]
 
 
-class _Fields(BaseProcessor[dict, dict]):
+class _Fields(BaseProcessor[dict]):
     @staticmethod
     def _populate_target(
             result: dict[str, Any],

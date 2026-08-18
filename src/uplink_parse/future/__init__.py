@@ -30,7 +30,7 @@ class request_auditor(
 
 @request_auditor
 def add_builder_to_ctx(request):
-    request._token = _cv_builder.set(request)
+    request.token_ctx = _cv_builder.set(request)
     return request
 
 

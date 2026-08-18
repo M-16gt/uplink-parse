@@ -49,10 +49,9 @@ class PypiStatsProjectParse(BS4Parse):
 
 @add_builder_to_ctx
 class PypiStats(uplink.Consumer):
-    @PypiStatsProjectParse(is_async=True)
+    @PypiStatsProjectParse()
     @uplink.get("/packages/{name}")
     def project_data(self, name: uplink.Path): pass
-
 
 async def main():
     # Создаем сессию явно, чтобы управлять её жизненным циклом

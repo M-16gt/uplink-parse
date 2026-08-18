@@ -1,13 +1,16 @@
 from __future__ import annotations
 import contextvars
 from typing import Optional
+
 from uplink_parse.core._dataclasses import ScraperCtxData
 from uplink_parse.core.exceptions import NoActiveContextError
 
-_cv_builder: contextvars.ContextVar = contextvars.ContextVar("uplink_parse.core.builder", default=None)
+_cv_builder: contextvars.ContextVar = contextvars.ContextVar(
+    __package__ + ".builder", default=None
+)
 
 _cv_ctx: contextvars.ContextVar[Optional[ScraperCtxData]] = contextvars.ContextVar(
-    "uplink_parse.core.ctx", default=None
+    __package__ + ".ctx", default=None
 )
 
 
@@ -16,7 +19,11 @@ class CtxProxy:
     def _get_data() -> ScraperCtxData:
         data = _cv_ctx.get()
         if data is None:
-            raise NoActiveContextError("No active scraper context.", source="CtxProxy", context=None)
+            raise NoActiveContextError(
+                "No active scraper context. "
+                "Ensure the call is inside a ScraperCtx manager.",
+                source="CtxProxy",
+            )
         return data
 
     def __getattr__(self, item):
@@ -29,8 +36,8 @@ ctx = CtxProxy()
 class ScraperCtx:
     def __init__(self, **kwargs):
         builder = _cv_builder.get()
-        if not builder is None:
-            _cv_builder.reset(builder._token)  # noqa
+        if builder is not None:
+            _cv_builder.reset(builder.token_ctx)
         self.data = ScraperCtxData(**kwargs | {"builder": builder})
         self.token: Optional[contextvars.Token] = None
 

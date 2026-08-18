@@ -1,6 +1,8 @@
 import xml.etree.ElementTree as ET # noqa
 from typing import Coroutine, TYPE_CHECKING
 
+from uplink_parse.core.utils import _to_awaitable
+
 if TYPE_CHECKING:
     from bs4 import BeautifulSoup
 
@@ -64,7 +66,7 @@ async def _async_soup(response) -> "BeautifulSoup":
     except ImportError:
         raise ImportError("beautifulsoup4 is not installed. Run: pip install beautifulsoup4")
 
-    return BeautifulSoup(await TextStrategy()(response), "html.parser")
+    return BeautifulSoup(await _to_awaitable(TextStrategy()(response)), "html.parser")
 
 
 class BS4Strategy(Strategy[BS4Result | Coroutine]):
