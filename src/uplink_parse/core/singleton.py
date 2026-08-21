@@ -1,21 +1,16 @@
 from __future__ import annotations
 
-class _SingletonBase:
-    """База для всех singleton метаклассов."""
+from typing import Any
 
+
+class SingletonMeta(type):
     _instances: dict[type, object] = {}
 
-    def __call__(cls, *args, **kwargs):
+    def __call__(cls, *args: Any, **kwargs: Any) -> object:
         if cls not in cls._instances:
-            cls._instances[cls] = super().__call__(*args, **kwargs)  # noqa
+            cls._instances[cls] = super().__call__(*args, **kwargs)
         return cls._instances[cls]
 
-class SingletonMeta(_SingletonBase, type):
-    """Singleton (для стратегий)."""
-    pass
 
-
-# Опционально: базовый класс для удобства
 class Singleton(metaclass=SingletonMeta):
-    """Базовый класс для singleton (если не нужны абстрактные методы)."""
     pass

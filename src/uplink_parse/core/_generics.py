@@ -13,5 +13,6 @@ output_rt_func = TypeVar("output_rt_func")
 RegistryGeneric = make_generic("RegistryGeneric", input_rt_func, output_rt_func)
 
 output_data_from_func = TypeVar("output_data_from_func")
+attr_name = TypeVar("attr_name")
 
-StrategyGeneric = make_generic("StrategyGeneric", output_data_from_func)
+StrategyGeneric = make_generic("StrategyGeneric", output_data_from_func, attr_name)

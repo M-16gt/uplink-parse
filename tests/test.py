@@ -1,29 +1,30 @@
 import asyncio
 import re
+import time
 
 import aiohttp
 import uplink
 
-import time
-
-from uplink import response_handler
-
 start = time.time()
-from uplink_parse.core.parse import BS4Parse, BaseParse, _async_to_sync
-from uplink_parse.decorators.field import field, _Field
+from uplink_parse.core.parse import BS4Parse
+from uplink_parse.decorators.field import field
 from uplink_parse.decorators.fields import fields
+from uplink_parse.future import add_builder_to_ctx
 
-from uplink_parse.decorators.hooks import prehooks, composehook
-from uplink_parse.core.ctx import ctx, ScraperCtxData
-
-from uplink_parse.future import route, add_builder_to_ctx
 
 class PypiStatsProjectParse(BS4Parse):
     # consumer: "PypiStats"
-    _patterns = [(name.lower(), r"{}:\s*\n\s*([^\n<]+)".format(name)) for name in
-                 ["Author", "License", "Latest version", "Downloads last day", "Downloads last week",
-                  "Downloads last month"]]
-
+    _patterns = [
+        (name.lower(), rf"{name}:\s*\n\s*([^\n<]+)")
+        for name in [
+            "Author",
+            "License",
+            "Latest version",
+            "Downloads last day",
+            "Downloads last week",
+            "Downloads last month",
+        ]
+    ]
 
     def extract_text(self, pattern):
         match = re.search(pattern, self.response.get_text(), re.DOTALL | re.IGNORECASE)
@@ -49,26 +50,30 @@ class PypiStatsProjectParse(BS4Parse):
 
 @add_builder_to_ctx
 class PypiStats(uplink.Consumer):
-    @PypiStatsProjectParse()
+    @PypiStatsProjectParse(is_async=True)
     @uplink.get("/packages/{name}")
-    def project_data(self, name: uplink.Path): pass
+    def project_data(self, name: uplink.Path):
+        pass
+
 
 async def main():
     # Создаем сессию явно, чтобы управлять её жизненным циклом
     async with aiohttp.ClientSession() as session:
         client = PypiStats(
             base_url="https://pypistats.org",
-            client=uplink.clients.AiohttpClient(session=session)
+            client=uplink.clients.AiohttpClient(session=session),
         )
 
         result = await client.project_data(name="requests")
-       # result = await client.project_data(name="requests")
-            # print(f"✅ Финальный результат в коде: {result}")
+        # result = await client.project_data(name="requests")
+        # print(f"✅ Финальный результат в коде: {result}")
         print(f"📦 Тип результата: {type(result)}")
         print(result)
 
+
 if __name__ == "__main__":
     import asyncio
+
     asyncio.run(main())
 
 # client = PypiStats(
@@ -78,4 +83,3 @@ if __name__ == "__main__":
 # result =client.project_data(name="requests")
 # print(result)
 # print(PypiStatsProjectParse().handle_response)
-

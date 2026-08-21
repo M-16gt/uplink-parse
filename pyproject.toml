@@ -15,7 +15,6 @@ dependencies = [
     "bs4>=0.0.2",
     "lxml>=6.0.2",
     "parsel>=1.11.0",
-    "repath>=0.9.0",
     "repomix>=0.5.0",
     "uplink>=0.10.0",
     "werkzeug>=3.1.8",
@@ -23,19 +22,15 @@ dependencies = [
 
 classifiers = [
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.8",
-    "Programming Language :: Python :: 3.9",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
 ]
 
 [project.optional-dependencies]
-html = [
-    "bs4>=0.0.2",
-    "lxml>=6.0.2",
-]
 auto-parse = [
     "uplink>=0.10.0",
 ]
@@ -51,8 +46,67 @@ build-backend = "hatchling.build"
 [tool.uv]
 dev-dependencies = [
     "build>=1.0.0",
+    "mypy>=2.3.1",
+    "pre-commit>=4.6.2",
+    "ruff>=0.16.4",
     "twine>=4.0.0",
 ]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/uplink_parse"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 88
+
+[tool.ruff.lint]
+select = [
+    "E", "W",   # pycodestyle
+    "F",        # Pyflakes
+    "I",        # isort (сортировка импортов)
+    "B",        # flake8-bugbear
+    "UP",       # pyupgrade
+    #"D",        # pydocstyle
+    "N",        # pep8-naming
+    "SIM",      # упрощение кода
+    "C4",       # comprehensions
+]
+ignore = [
+    "D100",
+    "D104",
+    "D107",
+    "UP007",
+    "UP035",
+]
+exclude = ["src/uplink_parse/decorators/hooks.py", "src/uplink_parse/future/*", "tests/*"]
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.isort]
+known-first-party = ["uplink_parse"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+docstring-code-format = true
+skip-magic-trailing-comma = false
+
+[tool.mypy]
+python_version = "3.10"
+strict = true
+warn_return_any = true
+warn_unused_ignores = true
+show_error_codes = true
+files = ["src"]
+namespace_packages = true
+explicit_package_bases = true
+ignore_missing_imports = true
+exclude = [
+    "src/uplink_parse/decorators/hooks\\.py$",
+    "src/uplink_parse/future/",
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+ignore_errors = true

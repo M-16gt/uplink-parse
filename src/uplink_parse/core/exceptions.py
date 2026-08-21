@@ -4,8 +4,7 @@ from typing import Any
 
 
 class UplinkParseError(Exception):
-    """
-    Корень иерархии исключений uplink-parse.
+    """Корень иерархии исключений uplink-parse.
     Любое исключение библиотеки ловится через `except UplinkParseError`.
     Автоматически захватывает активный ScraperCtx, если он есть.
     """
@@ -28,7 +27,8 @@ class UplinkParseError(Exception):
     def _capture_context() -> Any:
         """Пытается вытащить текущий ScraperCtxData из contextvars."""
         try:
-            from uplink_parse.core.ctx import _cv_ctx
+            from src.uplink_parse.core.ctx import _cv_ctx
+
             return _cv_ctx.get()
         except Exception:
             return None
@@ -62,6 +62,7 @@ class UplinkParseError(Exception):
 # ctx.py — контекст скрапера (contextvars)
 # --------------------------------------------------------------------------- #
 
+
 class ContextError(UplinkParseError):
     pass
 
@@ -69,9 +70,11 @@ class ContextError(UplinkParseError):
 class NoActiveContextError(ContextError):
     pass
 
+
 # --------------------------------------------------------------------------- #
 # strategy.py — стратегии преобразования ответа
 # --------------------------------------------------------------------------- #
+
 
 class StrategyError(UplinkParseError):
     pass
@@ -80,23 +83,28 @@ class StrategyError(UplinkParseError):
 class UnsupportedClientError(StrategyError):
     pass
 
+
 class ResponseParsingError(StrategyError):
     pass
+
 
 # --------------------------------------------------------------------------- #
 # task_strategy.py — стратегии выполнения задач (async gen / coro / sync / ...)
 # --------------------------------------------------------------------------- #
+
 
 class TaskStrategyError(UplinkParseError):
     pass
 
 
 class StrategyNotFoundError(TaskStrategyError):
-   pass
+    pass
+
 
 # --------------------------------------------------------------------------- #
 # processor.py — извлечение данных
 # --------------------------------------------------------------------------- #
+
 
 class ProcessorError(UplinkParseError):
     pass

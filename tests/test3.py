@@ -1,11 +1,12 @@
 import time
+
 import repath
 from werkzeug.routing import Map, Rule
-
 
 # ==============================================================================
 # 1. Реализации для теста
 # ==============================================================================
+
 
 class WerkzeugRouter:
     def __init__(self):
@@ -14,7 +15,7 @@ class WerkzeugRouter:
 
     def add_pattern(self, pattern: str):
         # Нормализуем {name} в <name> для Werkzeug
-        normalized = pattern.replace('{', '<').replace('}', '>')
+        normalized = pattern.replace("{", "<").replace("}", ">")
         self._map.add(Rule(normalized, endpoint="match"))
         # Пересоздаем адаптер (в реальном use-case это делается один раз после всех add)
         self._adapter = self._map.bind("")
@@ -59,6 +60,7 @@ class RepathRouter:
 # 2. Сценарий тестирования
 # ==============================================================================
 
+
 def run_benchmark(num_routes: int, num_iterations: int):
     print(f"\n{'=' * 60}")
     print(f"ТЕСТ: {num_routes} маршрутов, {num_iterations} итераций матчинга")
@@ -67,7 +69,7 @@ def run_benchmark(num_routes: int, num_iterations: int):
     # Генерируем тестовые данные
     routes = [f"/api/v1/resource_{i}/item/{{id}}" for i in range(num_routes)]
     target_hit = f"/api/v1/resource_{num_routes // 2}/item/{{id}}"  # Должен совпасть
-    target_miss = f"/api/v1/other_resource/{{id}}"  # Не должен совпасть
+    target_miss = "/api/v1/other_resource/{id}"  # Не должен совпасть
 
     # --- WERKZEUG ---
     wz_router = WerkzeugRouter()
@@ -115,11 +117,14 @@ def run_benchmark(num_routes: int, num_iterations: int):
     print(f"{'Метрика':<25} | {'Werkzeug':<15} | {'Repath':<15} | {'Победитель'}")
     print(f"{'-' * 65}")
     print(
-        f"{'Инициализация (Setup)':<25} | {wz_setup_time * 1000:>6.3f} ms    | {rp_setup_time * 1000:>6.3f} ms    | {'Repath' if rp_setup_time < wz_setup_time else 'Werkzeug'}")
+        f"{'Инициализация (Setup)':<25} | {wz_setup_time * 1000:>6.3f} ms    | {rp_setup_time * 1000:>6.3f} ms    | {'Repath' if rp_setup_time < wz_setup_time else 'Werkzeug'}"
+    )
     print(
-        f"{'Холодный матч (Cold)':<25} | {wz_cold_time * 1000:>6.3f} ms    | {rp_cold_time * 1000:>6.3f} ms    | {'Repath' if rp_cold_time < wz_cold_time else 'Werkzeug'}")
+        f"{'Холодный матч (Cold)':<25} | {wz_cold_time * 1000:>6.3f} ms    | {rp_cold_time * 1000:>6.3f} ms    | {'Repath' if rp_cold_time < wz_cold_time else 'Werkzeug'}"
+    )
     print(
-        f"{'Горячий матч (Hot, кэш)':<25} | {wz_hot_time * 1000:>6.3f} ms | {rp_hot_time * 1000:>6.3f} ms | {'Ничья (словарь)' if abs(wz_hot_time - rp_hot_time) < 0.0001 else ('Repath' if rp_hot_time < wz_hot_time else 'Werkzeug')}")
+        f"{'Горячий матч (Hot, кэш)':<25} | {wz_hot_time * 1000:>6.3f} ms | {rp_hot_time * 1000:>6.3f} ms | {'Ничья (словарь)' if abs(wz_hot_time - rp_hot_time) < 0.0001 else ('Repath' if rp_hot_time < wz_hot_time else 'Werkzeug')}"
+    )
 
 
 # Запускаем тесты

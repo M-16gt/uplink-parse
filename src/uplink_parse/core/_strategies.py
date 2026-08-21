@@ -1,76 +1,54 @@
-import xml.etree.ElementTree as ET # noqa
-from typing import Coroutine, TYPE_CHECKING
+from __future__ import annotations
 
-from uplink_parse.core.utils import _to_awaitable
+from typing import Any, Literal, TypeAlias
+from xml.etree import ElementTree as ET
 
-if TYPE_CHECKING:
-    from bs4 import BeautifulSoup
-
-from uplink_parse.core.strategy import Strategy
+from src.uplink_parse.core.strategy import Strategy
 
 TextResult = str
 
 
-class TextStrategy(Strategy[TextResult | Coroutine]):
-    funcs_dict = {
-        "RequestsClient": lambda response: response.text,
-        "AiohttpClient": lambda response: response.text()
-    }
+class TextStrategy(Strategy[TextResult, Literal["text"]]):
+    pass
 
 
-JSONResult = dict
+JSONResult: TypeAlias = dict[str, Any]
 
 
-class JSONStrategy(Strategy[JSONResult | Coroutine]):
-    funcs_dict = {
-        "RequestsClient": lambda response: response.json(),
-        "AiohttpClient": lambda response: response.json()
-    }
+class JSONStrategy(Strategy[JSONResult, Literal["json"]]):
+    pass
 
 
 BytesResult = bytes
 
 
-class BytesStrategy(Strategy[BytesResult]):
-    funcs_dict = {
-        "RequestsClient": lambda response: response.content,
-        "AiohttpClient": lambda response: response.read()
-    }
+class BytesStrategy(Strategy[BytesResult, Literal["read", "content", "data", "body"]]):
+    pass
+
 
 XMLResult = ET.Element
 
-async def _async_tree(response) -> XMLResult:
-    return ET.fromstring(await TextStrategy()(response))
+
+class XMLStrategy(Strategy[XMLResult, Literal["text"]]):
+    def transform(self, raw: str) -> ET.Element:
+        return ET.fromstring(raw)
 
 
-class XMLStrategy(Strategy[XMLResult | Coroutine]):
-    funcs_dict = {
-        "RequestsClient": lambda response: ET.fromstring(response.text),
-        "AiohttpClient": _async_tree
-    }
-
-BS4Result = "BeautifulSoup"
+BS4Result: TypeAlias = "BeautifulSoup"  # type: ignore[name-defined]  # noqa: F821
 
 
-def _sync_bs4(response) -> "BeautifulSoup":
-    try:
+class BS4Strategy(Strategy[BS4Result, Literal["text"]]):
+    def transform(self, raw: str) -> Any:
         from bs4 import BeautifulSoup
-    except ImportError:
-        raise ImportError("beautifulsoup4 is not installed. Run: pip install beautifulsoup4")
-    return BeautifulSoup(TextStrategy()(response), "html.parser")
+
+        return BeautifulSoup(raw, "html.parser")
 
 
-async def _async_soup(response) -> "BeautifulSoup":
-    try:
-        from bs4 import BeautifulSoup
-    except ImportError:
-        raise ImportError("beautifulsoup4 is not installed. Run: pip install beautifulsoup4")
-
-    return BeautifulSoup(await _to_awaitable(TextStrategy()(response)), "html.parser")
+ParselResult: TypeAlias = "Selector"  # type: ignore[name-defined]  # noqa: F821
 
 
-class BS4Strategy(Strategy[BS4Result | Coroutine]):
-    funcs_dict = {
-        "RequestsClient": _sync_bs4,
-        "AiohttpClient": _async_soup
-    }
+class ParselStrategy(Strategy[ParselResult, Literal["text"]]):
+    def transform(self, raw: str) -> Any:
+        from parsel import Selector
+
+        return Selector(text=raw)

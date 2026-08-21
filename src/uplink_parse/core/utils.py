@@ -1,40 +1,58 @@
-import asyncio
 import inspect
-from typing import Any, Callable, Coroutine
+from collections.abc import Callable, Coroutine
+from typing import Any
 
-from uplink_parse.core._enums import FieldActions
+import attrs
 
-def _name(obj) -> str:
+
+def _name(obj: Any) -> str:
     if isinstance(obj, str):
         return obj
-    return getattr(obj, "__qualname__", None) or getattr(obj, "__name__", type(obj).__name__)
+    return (
+        getattr(obj, "__qualname__", None)
+        or getattr(obj, "__name__", type(obj).__name__)
+        or ""
+    )
 
 
-async def _to_awaitable(obj):
+async def _to_awaitable(obj: Any) -> Any:
     if hasattr(obj, "__await__"):
         return await obj
     return obj
 
-def _to_coroutines(items: list) -> list[Coroutine | Callable]:
+
+def _to_coroutines(
+    items: list[Any],
+) -> list[Coroutine[Any, Any, Any] | Callable[..., Any]]:
     return [item() if inspect.iscoroutinefunction(item) else item for item in items]
 
-def to_list(obj) -> list | tuple:
+
+def to_list(obj: Any) -> list[Any] | tuple[Any, ...]:
     if isinstance(obj, (list, tuple)):
         return obj
     return [obj] if obj is not None else []
 
-def _resolve(value, fallback):
-    """None-safe fallback (unlike `value or fallback`, doesn't misfire on [] / 0 / False)."""
+
+def _resolve(value: Any, fallback: Any) -> Any:
     return fallback if value is None else value
 
-def _apply_post_mutation(hooks: list, mutations: list[Callable]) -> list:
+
+def _apply_post_mutation(
+    hooks: list[Any], mutations: list[Callable[..., Any]]
+) -> list[Any]:
     for mut in mutations:
         mut(hooks)
     return hooks
 
 
-def _has_async(*callables: Callable) -> bool:
-    for c in callables:
-        if callable(c) and inspect.iscoroutinefunction(c):
-            return True
-    return False
+def _has_async(*callables: Callable[..., Any]) -> bool:
+    return any(callable(c) and inspect.iscoroutinefunction(c) for c in callables)
+
+
+def _transpose_dict_to_dataclass(
+    data: dict[str, list[Any]], cls: type[attrs.AttrsInstance]
+) -> list[Any]:
+    field_names = tuple(f.name for f in attrs.fields(cls))
+    values_lists = tuple(data[name] for name in field_names)
+
+    return [cls(*args) for args in zip(*values_lists, strict=False)]

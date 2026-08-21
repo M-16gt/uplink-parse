@@ -1,12 +1,12 @@
 import asyncio
-from typing import Callable, Any
+from collections.abc import Callable
+from typing import Any
 
-from uplink_parse.core._dataclasses import FuncMeta
+from src.uplink_parse.core._dataclasses import FuncMeta
 
 
 class TaskRunner:
-    """
-    Оркестратор запуска задач из _ParseMeta.
+    """Оркестратор запуска задач из _ParseMeta.
     Пользователь может подменить экземпляр через owner.storage.task_runner = ...
     """
 
@@ -16,21 +16,23 @@ class TaskRunner:
         self,
         batch_size: int = 200,
         use_thread_for_sync: bool = True,
-        on_error: Callable[[Exception, FuncMeta, list], None] | None = None,
+        on_error: Callable[[Exception, FuncMeta, list[Any]], None] | None = None,
     ):
         self.batch_size = batch_size
         self.use_thread_for_sync = use_thread_for_sync
         self.on_error = on_error or self._default_on_error
 
     @staticmethod
-    def _default_on_error(exc: Exception, func_meta: FuncMeta, result_list: list) -> None:
+    def _default_on_error(
+        exc: Exception, func_meta: FuncMeta, result_list: list[Any]
+    ) -> None:
         raise
 
     async def __call__(self, funcs: list[FuncMeta]) -> dict[str, Any]:
         if not funcs:
             return {}
 
-        results: list[list] = [[] for _ in funcs]
+        results: list[list[Any]] = [[] for _ in funcs]
         tasks = [
             asyncio.create_task(self._run_single(func_meta, results[i]))
             for i, func_meta in enumerate(funcs)
@@ -39,7 +41,7 @@ class TaskRunner:
         await asyncio.gather(*tasks, return_exceptions=False)
         return self._unwrap_results(funcs, results)
 
-    async def _run_single(self, func_meta: FuncMeta, result_list: list) -> None:
+    async def _run_single(self, func_meta: FuncMeta, result_list: list[Any]) -> None:
         try:
             await func_meta.strategy(
                 func_meta.coroutine_or_func,
@@ -51,8 +53,10 @@ class TaskRunner:
             self.on_error(exc, func_meta, result_list)
 
     @staticmethod
-    def _unwrap_results(funcs: list[FuncMeta], results: list[list]) -> dict[str, Any]:
+    def _unwrap_results(
+        funcs: list[FuncMeta], results: list[list[Any]]
+    ) -> dict[str, Any]:
         target: dict[str, Any] = {}
-        for func_meta, result in zip(funcs, results):
+        for func_meta, result in zip(funcs, results, strict=False):
             target[func_meta.name] = result[0] if len(result) == 1 else result
         return target

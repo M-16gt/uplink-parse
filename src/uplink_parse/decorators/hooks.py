@@ -1,11 +1,19 @@
 from __future__ import annotations
 
-import inspect
 import functools
-from typing import Callable, Any
+import inspect
+from collections.abc import Callable
+from typing import Any
 
-from uplink_parse.core.utils import to_list, _to_awaitable, _resolve, _apply_post_mutation, _has_async  # noqa
 from asgiref.sync import async_to_sync as _async_to_sync
+
+from uplink_parse.core.utils import (  # noqa
+    _apply_post_mutation,
+    _has_async,
+    _resolve,
+    _to_awaitable,
+    to_list,
+)
 
 _FEATURE_MARKER = object()
 
@@ -14,10 +22,10 @@ class hook:
     __slots__ = ("_hooks", "_post_mutation", "_wrap_condition")
 
     def __init__(
-            self,
-            *hooks: Callable,
-            post_mutation: list[Callable] | Callable | None = None,
-            wrap_condition: Callable[[Any, Callable], bool] | None = None,
+        self,
+        *hooks: Callable,
+        post_mutation: list[Callable] | Callable | None = None,
+        wrap_condition: Callable[[Any, Callable], bool] | None = None,
     ):
         self._hooks = list(hooks)
         self._post_mutation = to_list(post_mutation)
@@ -29,9 +37,12 @@ class hook:
     def _create_async_wrapper(self, active_hooks: list, func: Callable) -> Callable:
         raise NotImplementedError
 
-    def _create_sync_wrapper(self, active_hooks: list, func: Callable) -> Callable | None:
+    def _create_sync_wrapper(
+        self, active_hooks: list, func: Callable
+    ) -> Callable | None:
         """Optional fast path for all-sync chains (no event loop involved at all).
-        Return None to fall back to the async wrapper + sync bridge."""
+        Return None to fall back to the async wrapper + sync bridge.
+        """
         return None
 
     def _should_wrap(self, func: Callable, active_hooks: list, wrap_condition) -> bool:
@@ -44,12 +55,12 @@ class hook:
     # --- decorator entrypoint --------------------------------------------
 
     def __call__(
-            self,
-            func: Callable | None = None,
-            *,
-            hooks: list[Callable] | Callable | None = None,
-            post_mutation: list[Callable] | Callable | None = None,
-            wrap_condition: Callable[[Any, Callable], bool] | None = None,
+        self,
+        func: Callable | None = None,
+        *,
+        hooks: list[Callable] | Callable | None = None,
+        post_mutation: list[Callable] | Callable | None = None,
+        wrap_condition: Callable[[Any, Callable], bool] | None = None,
     ) -> Callable:
         if func is None:
             return functools.partial(
@@ -73,12 +84,16 @@ class hook:
             if sync_wrapper is not None:
                 return functools.wraps(func)(sync_wrapper)
 
-        async_wrapper = functools.wraps(func)(self._create_async_wrapper(active_hooks, func))
+        async_wrapper = functools.wraps(func)(
+            self._create_async_wrapper(active_hooks, func)
+        )
         return async_wrapper if is_async_func else _async_to_sync(async_wrapper)
 
 
 class prehooks(hook):  # noqa
-    async def _start(self, active_hooks: list, args: list, kwargs: dict, func: Callable) -> Any:
+    async def _start(
+        self, active_hooks: list, args: list, kwargs: dict, func: Callable
+    ) -> Any:
         for h in active_hooks:
             hook_res = await _to_awaitable(h(args, kwargs, func))
             if hook_res is not True:
@@ -139,10 +154,10 @@ class posthooks(hook):  # noqa
 
 class composehook(hook):  # noqa
     def __init__(
-            self,
-            *hooks: Callable,
-            post_mutation: list[Callable] | Callable | None = None,
-            wrap_condition: Callable[[Any, Callable], bool] | None = None,
+        self,
+        *hooks: Callable,
+        post_mutation: list[Callable] | Callable | None = None,
+        wrap_condition: Callable[[Any, Callable], bool] | None = None,
     ):
         super().__init__(*hooks, post_mutation=None, wrap_condition=wrap_condition)
         self._hooks = self._hooks + [_FEATURE_MARKER]

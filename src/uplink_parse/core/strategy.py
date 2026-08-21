@@ -1,28 +1,40 @@
-from uplink_parse.core.ctx import ctx
-from uplink_parse.core.singleton import Singleton
-from uplink_parse.core._generics import StrategyGeneric, output_data_from_func
-from uplink_parse.core.utils import _name
-from uplink_parse.core.exceptions import UnsupportedClientError, ResponseParsingError
+from __future__ import annotations
+
+from typing import Any, cast, get_args
+
+from src.uplink_parse.core._generics import (
+    StrategyGeneric,
+    attr_name,
+    output_data_from_func,
+)
+from src.uplink_parse.core.accessor import ResponseAccessor
+from src.uplink_parse.core.exceptions import ResponseParsingError, StrategyError
+from src.uplink_parse.core.singleton import Singleton
+from src.uplink_parse.core.utils import _to_awaitable
 
 
-class Strategy(StrategyGeneric[output_data_from_func], Singleton):
-    funcs_dict = {}
-
-    def __call__(self, response) -> output_data_from_func:
-        client_name = _name(ctx.consumer._Consumer__client.__class__)  # noqa
-
+class Strategy(StrategyGeneric[output_data_from_func, attr_name], Singleton):
+    async def __call__(self, response: Any) -> output_data_from_func:
         try:
-            handler = self.funcs_dict[client_name]
-            return handler(response)
+            attrs = get_args(self.config_types["attr_name"])
+            if not attrs:
+                raise StrategyError(
+                    f"{self.__class__.__name__}: attr_name must be a Literal "
+                    f"with at least one string argument"
+                )
+
+            return self.transform(
+                await _to_awaitable(ResponseAccessor.get_any(response, *attrs))
+            )
+
         except KeyError:
-            raise UnsupportedClientError(
-                f"{self.__class__.__name__} has no handler for client '{client_name}'.",
-                details={"client_name": client_name},
-                source=self.__class__.__name__,
-            ) from None
+            raise StrategyError from None
         except Exception as exc:
             raise ResponseParsingError(
-                f"Failed to transform response: {exc}",
-                details={"strategy_name": self.__class__.__name__, "original_exception": exc},
+                f"Failed to parse response: {exc}",
+                details={"strategy": self.__class__.__name__},
                 source=self.__class__.__name__,
             ) from exc
+
+    def transform(self, raw: Any) -> output_data_from_func:
+        return cast(output_data_from_func, raw)

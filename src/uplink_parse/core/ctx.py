@@ -1,15 +1,16 @@
 from __future__ import annotations
+
 import contextvars
-from typing import Optional
+from typing import Any, Literal
 
-from uplink_parse.core._dataclasses import ScraperCtxData
-from uplink_parse.core.exceptions import NoActiveContextError
+from src.uplink_parse.core._dataclasses import ScraperCtxData
+from src.uplink_parse.core.exceptions import NoActiveContextError
 
-_cv_builder: contextvars.ContextVar = contextvars.ContextVar(
+_cv_builder: contextvars.ContextVar[Any] = contextvars.ContextVar(
     __package__ + ".builder", default=None
 )
 
-_cv_ctx: contextvars.ContextVar[Optional[ScraperCtxData]] = contextvars.ContextVar(
+_cv_ctx: contextvars.ContextVar[ScraperCtxData | None] = contextvars.ContextVar(
     __package__ + ".ctx", default=None
 )
 
@@ -26,7 +27,7 @@ class CtxProxy:
             )
         return data
 
-    def __getattr__(self, item):
+    def __getattr__(self, item: str) -> Any:
         return getattr(self._get_data(), item)
 
 
@@ -34,18 +35,18 @@ ctx = CtxProxy()
 
 
 class ScraperCtx:
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Any) -> None:
         builder = _cv_builder.get()
         if builder is not None:
             _cv_builder.reset(builder.token_ctx)
         self.data = ScraperCtxData(**kwargs | {"builder": builder})
-        self.token: Optional[contextvars.Token] = None
+        self.token: contextvars.Token[Any] | None = None
 
     def __enter__(self) -> ScraperCtxData:
         self.token = _cv_ctx.set(self.data)
         return self.data
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type: Any, exc_val: Any, exc_tb: Any) -> Literal[False]:
         if self.token is not None:
             _cv_ctx.reset(self.token)
         return False
