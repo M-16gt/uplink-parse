@@ -14,7 +14,7 @@ from src.uplink_parse.core.utils.cached import Cached
 
 
 class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):
-    async def __call__(self, response: Any) -> output_data_from_func:
+    async def __call__(self, response: Any, **params: Any) -> output_data_from_func:
         try:
             attrs = get_args(self.config_types["attr_name"])
             if not attrs:
@@ -24,7 +24,8 @@ class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):
                 )
 
             return self.transform(
-                await await_or_return(ResponseAccessor.get_any(response, *attrs))
+                await await_or_return(ResponseAccessor.get_any(response, *attrs)),
+                **params,
             )
 
         except KeyError:
@@ -36,5 +37,5 @@ class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):
                 source=self.__class__.__name__,
             ) from exc
 
-    def transform(self, raw: Any) -> output_data_from_func:
+    def transform(self, raw: Any, **params: Any) -> output_data_from_func:
         return cast(output_data_from_func, raw)

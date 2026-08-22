@@ -50,17 +50,22 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
         *,
         is_decorator: bool = True,
         is_async: bool = False,
-        _registry_params: dict[str, Any] | None = None,
+        registry_params: dict[str, Any] | None = None,
+        strategy_params: dict[str, Any] | None = None,
     ) -> Any:
         instance = super().__new__(cls)
 
         parse_funcs_meta = BaseProcessor.build_parse_meta(
-            instance, **(_registry_params or {"check_mro": True})
+            instance,
+            **(registry_params if registry_params is not None else {"check_mro": True}),
         )
         task_runner = TaskRunner()
         instance.storage = Storage(
-            parse_funcs_meta=parse_funcs_meta, task_runner=task_runner
+            parse_funcs_meta=parse_funcs_meta,
+            task_runner=task_runner,
+            strategy_params=strategy_params or {},
         )
+
         instance.__call__ = (  # type: ignore[method-assign]
             instance.__call__ if is_async else async_to_sync(instance.__call__)
         )
@@ -84,7 +89,9 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
 
     @classmethod
     async def parse_response(cls) -> Any:
-        return await cls.config_types["strategy"]()(ctx.request)
+        return await cls.config_types["strategy"]()(
+            ctx.request, cls.storage.strategy_params
+        )
 
     @staticmethod
     def use_parse_response() -> bool:

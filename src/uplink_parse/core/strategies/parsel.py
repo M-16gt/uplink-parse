@@ -1,4 +1,4 @@
-from typing import Literal, TypeAlias
+from typing import Any, Literal, TypeAlias
 
 from parsel import Selector
 
@@ -8,5 +8,5 @@ ParselResult: TypeAlias = Selector
 
 
 class ParselStrategy(Strategy[ParselResult, Literal["text"]]):
-    def transform(self, raw: str) -> ParselResult:
-        return Selector(text=raw)
+    def transform(self, raw: str, **params: Any) -> ParselResult:
+        return Selector(text=raw, **params)

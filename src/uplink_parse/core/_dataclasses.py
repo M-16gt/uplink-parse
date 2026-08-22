@@ -73,3 +73,4 @@ class ScraperCtxData:
 class Storage:
     parse_funcs_meta: dict[str, _ParseMeta]
     task_runner: TaskRunner
+    strategy_params: dict[str, Any] = attrs.field(factory=dict)
