@@ -4,7 +4,7 @@ from typing import Any
 
 from typing_extensions import Self
 
-from src.uplink_parse.core.compat import async_to_sync
+from uplink_parse.core.tasks.compat import async_to_sync
 
 try:
     from uplink import response_handler
@@ -16,9 +16,8 @@ except ImportError:
 
 from src.uplink_parse.core._dataclasses import Storage
 from src.uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
-from src.uplink_parse.core._strategies import (
-    BS4Result,
-    BS4Strategy,
+from src.uplink_parse.core.processor import BaseProcessor, extract
+from src.uplink_parse.core.strategies import (
     BytesResult,
     BytesStrategy,
     JSONResult,
@@ -28,10 +27,9 @@ from src.uplink_parse.core._strategies import (
     XMLResult,
     XMLStrategy,
 )
-from src.uplink_parse.core.cached import Cached
-from src.uplink_parse.core.ctx import ScraperCtx, ctx
-from src.uplink_parse.core.processor import BaseProcessor, extract
-from src.uplink_parse.core.task_runner import TaskRunner
+from src.uplink_parse.core.utils.cached import Cached
+from uplink_parse.core.tasks.task_runner import TaskRunner
+from uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 
 class _ParseObj(ParseGeneric[strategy, strategy_rt], Cached):
@@ -78,7 +76,7 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
             request=args[-1],
         ) as _:
             if self.use_parse_response():
-                ctx.response = await self.parse_response()  # type: ignore[attr-defined]
+                ctx.response = await self.parse_response()
             start = time.time()
             result = await extract(self, {})
             print(time.time() - start)
@@ -91,9 +89,6 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
     @staticmethod
     def use_parse_response() -> bool:
         return bool(getattr(ctx.request, "status_code", None))
-
-
-class BS4Parse(BaseParse[BS4Strategy, BS4Result]): ...
 
 
 class TextParse(BaseParse[TextStrategy, TextResult]): ...

@@ -15,7 +15,7 @@ from src.uplink_parse.core._extractors import (
 from src.uplink_parse.core.utils import _transpose_dict_to_dataclass
 
 if TYPE_CHECKING:
-    from src.uplink_parse.core.task_runner import TaskRunner
+    from uplink_parse.core.tasks.task_runner import TaskRunner
 
 
 @attrs.define

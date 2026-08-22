@@ -10,7 +10,7 @@ from src.uplink_parse.core._generics import (
     input_rt_func,
     output_rt_func,
 )
-from src.uplink_parse.core.utils import _name, to_list
+from src.uplink_parse.core.utils import obj_name, to_list
 
 
 class BaseRegistry(RegistryGeneric[input_rt_func, output_rt_func]):
@@ -28,7 +28,7 @@ class BaseRegistry(RegistryGeneric[input_rt_func, output_rt_func]):
         if func is None:
             return functools.partial(self, hooks=hooks)
 
-        self._registry[_name(func.__qualname__.rsplit(".", maxsplit=1)[0])].add(
+        self._registry[obj_name(func.__qualname__.rsplit(".", maxsplit=1)[0])].add(
             func.__name__
         )
 
@@ -47,13 +47,13 @@ class BaseRegistry(RegistryGeneric[input_rt_func, output_rt_func]):
         if owner is None:
             return set().union(*cls._registry.values())
 
-        owner_name = _name(owner)
+        owner_name = obj_name(owner)
         if not check_mro:
             return cls._registry[owner_name]
 
         if not cls._registry_with_mro[owner_name]:
             for base in set(owner.__mro__) - (passed_classes or set()):
-                cls._registry_with_mro[owner_name] |= cls._registry[_name(base)]
+                cls._registry_with_mro[owner_name] |= cls._registry[obj_name(base)]
 
         return cls._registry_with_mro[owner_name]
 

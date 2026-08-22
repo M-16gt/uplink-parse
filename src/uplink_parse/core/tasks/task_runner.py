@@ -6,10 +6,6 @@ from src.uplink_parse.core._dataclasses import FuncMeta
 
 
 class TaskRunner:
-    """Оркестратор запуска задач из _ParseMeta.
-    Пользователь может подменить экземпляр через owner.storage.task_runner = ...
-    """
-
     __slots__ = ("batch_size", "use_thread_for_sync", "on_error")
 
     def __init__(

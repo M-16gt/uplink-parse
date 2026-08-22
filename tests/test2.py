@@ -4,11 +4,11 @@ import asyncio
 import aiohttp
 import uplink
 
-from uplink_parse.core._strategies import ParselResult, ParselStrategy
+from src.uplink_parse.core.strategies.parsel import ParselResult, ParselStrategy
 
 # ... существующие импорты ...
-from uplink_parse.core.parse import BaseParse
-from uplink_parse.decorators.field import field
+from src.uplink_parse.core.parse import BaseParse
+from src.uplink_parse.decorators.field import field
 
 
 class ParselParse(BaseParse[ParselStrategy, ParselResult]):

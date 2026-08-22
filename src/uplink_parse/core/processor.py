@@ -3,9 +3,9 @@ from typing import Any
 
 from src.uplink_parse.core._dataclasses import _ParseMeta
 from src.uplink_parse.core._generics import input_rt_func
-from src.uplink_parse.core.cached import Cached
 from src.uplink_parse.core.exceptions import ProcessorCacheError, ProcessorError
 from src.uplink_parse.core.registry import BaseRegistry
+from src.uplink_parse.core.utils.cached import Cached
 
 
 class BaseProcessor(BaseRegistry[input_rt_func, dict[str, Any]], Cached):

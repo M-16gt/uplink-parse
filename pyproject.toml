@@ -29,10 +29,10 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-[project.optional-dependencies]
-auto-parse = [
-    "uplink>=0.10.0",
-]
+#[project.optional-dependencies]
+#auto-parse = [
+#    "uplink>=0.10.0",
+#]
 
 [project.urls]
 Homepage = "https://github.com/M-16gt/uplink-parse"

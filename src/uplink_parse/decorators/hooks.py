@@ -5,7 +5,7 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 
-from uplink_parse.core.compat import async_to_sync, await_or_return
+from uplink_parse.core.tasks.compat import async_to_sync, await_or_return
 from uplink_parse.core.utils import (  # noqa
     _apply_post_mutation,
     _has_async,

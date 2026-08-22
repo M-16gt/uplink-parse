@@ -27,7 +27,7 @@ class UplinkParseError(Exception):
     def _capture_context() -> Any:
         """Пытается вытащить текущий ScraperCtxData из contextvars."""
         try:
-            from src.uplink_parse.core.ctx import _cv_ctx
+            from uplink_parse.core.utils.ctx import _cv_ctx
 
             return _cv_ctx.get()
         except Exception:

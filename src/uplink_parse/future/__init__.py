@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import uplink
 
-from uplink_parse.core.ctx import _cv_builder
+from uplink_parse.core.utils.ctx import _cv_builder
 from uplink_parse.decorators.hooks import posthooks, prehooks
 
 

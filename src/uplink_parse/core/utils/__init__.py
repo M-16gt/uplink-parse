@@ -4,8 +4,13 @@ from typing import Any
 
 import attrs
 
+from src.uplink_parse.core.utils.cached import Cached
+from src.uplink_parse.core.utils.ctx import ctx
 
-def _name(obj: Any) -> str:
+__all__ = ["Cached", "ctx", "to_list", "obj_name"]
+
+
+def obj_name(obj: object) -> str:
     if isinstance(obj, str):
         return obj
     return (
@@ -21,10 +26,12 @@ def to_list(obj: Any) -> list[Any] | tuple[Any, ...]:
     return [obj] if obj is not None else []
 
 
+# на рефакторинге
 def _resolve(value: Any, fallback: Any) -> Any:
     return fallback if value is None else value
 
 
+# на рефакторинге
 def _apply_post_mutation(
     hooks: list[Any], mutations: list[Callable[..., Any]]
 ) -> list[Any]:
@@ -33,6 +40,7 @@ def _apply_post_mutation(
     return hooks
 
 
+# на рефакторинге
 def _has_async(*callables: Callable[..., Any]) -> bool:
     return any(callable(c) and inspect.iscoroutinefunction(c) for c in callables)
 

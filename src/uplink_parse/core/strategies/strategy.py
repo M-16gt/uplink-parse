@@ -7,10 +7,10 @@ from src.uplink_parse.core._generics import (
     attr_name,
     output_data_from_func,
 )
-from src.uplink_parse.core.accessor import ResponseAccessor
-from src.uplink_parse.core.cached import Cached
-from src.uplink_parse.core.compat import await_or_return
 from src.uplink_parse.core.exceptions import ResponseParsingError, StrategyError
+from src.uplink_parse.core.strategies.accessor import ResponseAccessor
+from src.uplink_parse.core.tasks.compat import await_or_return
+from src.uplink_parse.core.utils.cached import Cached
 
 
 class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):

@@ -1,7 +1,7 @@
 from typing import Any
 
-from src.uplink_parse.core.compat import to_runnable
-from src.uplink_parse.core.task_strategy import BaseTaskStrategy
+from src.uplink_parse.core.tasks.compat import to_runnable
+from src.uplink_parse.core.tasks.task_strategy import BaseTaskStrategy
 
 
 def _extract_name(
