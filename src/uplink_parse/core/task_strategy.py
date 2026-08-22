@@ -6,6 +6,7 @@ from typing import Any
 
 from src.uplink_parse.core.cached import Cached
 from src.uplink_parse.core.exceptions import StrategyNotFoundError
+from src.uplink_parse.core.utils import to_list
 
 
 class BaseTaskStrategy(Cached):
@@ -17,10 +18,7 @@ class BaseTaskStrategy(Cached):
                 if isinstance(val, list):
                     lst.extend(val)
                     continue
-            if isinstance(item, list):
-                lst.extend(item)
-            else:
-                lst.append(item)
+            lst.extend(to_list(item))
         batch.clear()
 
     @staticmethod
@@ -64,10 +62,7 @@ class _FuncSyncGenStrategy(BaseTaskStrategy):
         return inspect.isgeneratorfunction(tgt)
 
     async def __call__(self, tgt: Any, lst: list[Any], bs: int, ut: bool) -> None:
-        items = list(tgt())
-        if not items:
-            return
-        data = await asyncio.to_thread(lambda: items) if ut else items
+        data = await asyncio.to_thread(lambda: list(tgt())) if ut else list(tgt())
         self._flush_batch(lst, data)
 
 

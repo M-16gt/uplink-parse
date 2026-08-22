@@ -1,5 +1,5 @@
 import inspect
-from collections.abc import Callable, Coroutine
+from collections.abc import Callable
 from typing import Any
 
 import attrs
@@ -13,18 +13,6 @@ def _name(obj: Any) -> str:
         or getattr(obj, "__name__", type(obj).__name__)
         or ""
     )
-
-
-async def _to_awaitable(obj: Any) -> Any:
-    if hasattr(obj, "__await__"):
-        return await obj
-    return obj
-
-
-def _to_coroutines(
-    items: list[Any],
-) -> list[Coroutine[Any, Any, Any] | Callable[..., Any]]:
-    return [item() if inspect.iscoroutinefunction(item) else item for item in items]
 
 
 def to_list(obj: Any) -> list[Any] | tuple[Any, ...]:
@@ -55,4 +43,4 @@ def _transpose_dict_to_dataclass(
     field_names = tuple(f.name for f in attrs.fields(cls))
     values_lists = tuple(data[name] for name in field_names)
 
-    return [cls(*args) for args in zip(*values_lists, strict=False)]
+    return [cls(*args) for args in zip(*values_lists, strict=True)]

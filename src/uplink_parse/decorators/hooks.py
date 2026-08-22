@@ -5,13 +5,11 @@ import inspect
 from collections.abc import Callable
 from typing import Any
 
-from asgiref.sync import async_to_sync as _async_to_sync
-
+from uplink_parse.core.compat import async_to_sync, await_or_return
 from uplink_parse.core.utils import (  # noqa
     _apply_post_mutation,
     _has_async,
     _resolve,
-    _to_awaitable,
     to_list,
 )
 
@@ -87,7 +85,7 @@ class hook:
         async_wrapper = functools.wraps(func)(
             self._create_async_wrapper(active_hooks, func)
         )
-        return async_wrapper if is_async_func else _async_to_sync(async_wrapper)
+        return async_wrapper if is_async_func else async_to_sync(async_wrapper)
 
 
 class prehooks(hook):  # noqa
@@ -95,7 +93,7 @@ class prehooks(hook):  # noqa
         self, active_hooks: list, args: list, kwargs: dict, func: Callable
     ) -> Any:
         for h in active_hooks:
-            hook_res = await _to_awaitable(h(args, kwargs, func))
+            hook_res = await await_or_return(h(args, kwargs, func))
             if hook_res is not True:
                 return hook_res
         return True
@@ -106,7 +104,7 @@ class prehooks(hook):  # noqa
             res = await self._start(active_hooks, args_list, kwargs, func)
             if res is not True:
                 return res
-            return await _to_awaitable(func(*args_list, **kwargs))
+            return await await_or_return(func(*args_list, **kwargs))
 
         return wrapper
 
@@ -129,12 +127,12 @@ class posthooks(hook):  # noqa
     async def _start(self, active_hooks, result):
         current_res = result
         for h in active_hooks:
-            current_res = await _to_awaitable(h(current_res))
+            current_res = await await_or_return(h(current_res))
         return current_res
 
     def _create_async_wrapper(self, active_hooks, func):
         async def wrapper(*args, **kwargs):
-            original_res = await _to_awaitable(func(*args, **kwargs))
+            original_res = await await_or_return(func(*args, **kwargs))
             return await self._start(active_hooks, original_res)
 
         return wrapper
@@ -169,9 +167,9 @@ class composehook(hook):  # noqa
         return [func if h is _FEATURE_MARKER else h for h in active_hooks]
 
     async def _start(self, active_hooks, *args, **kwargs):
-        res = await _to_awaitable(active_hooks[0](*args, **kwargs))
+        res = await await_or_return(active_hooks[0](*args, **kwargs))
         for f in active_hooks[1:]:
-            res = await _to_awaitable(f(res))
+            res = await await_or_return(f(res))
         return res
 
     def _create_async_wrapper(self, active_hooks, func):
@@ -200,7 +198,7 @@ class errorhook(hook):
     async def _start(self, active_hooks, func, exception):
         for h in active_hooks:
             try:
-                return await _to_awaitable(h(exception, func))
+                return await await_or_return(h(exception, func))
             except Exception:  # noqa
                 continue
         raise exception
@@ -208,7 +206,7 @@ class errorhook(hook):
     def _create_async_wrapper(self, active_hooks, func):
         async def wrapper(*args, **kwargs):
             try:
-                return await _to_awaitable(func(*args, **kwargs))
+                return await await_or_return(func(*args, **kwargs))
             except Exception as e:
                 return await self._start(active_hooks, func, e)
 

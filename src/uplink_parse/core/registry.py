@@ -28,7 +28,9 @@ class BaseRegistry(RegistryGeneric[input_rt_func, output_rt_func]):
         if func is None:
             return functools.partial(self, hooks=hooks)
 
-        self._registry[_name(func.__qualname__.split(".")[0])].add(func.__name__)
+        self._registry[_name(func.__qualname__.rsplit(".", maxsplit=1)[0])].add(
+            func.__name__
+        )
 
         for h in to_list(hooks):
             func = h(func)

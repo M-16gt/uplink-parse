@@ -1,7 +1,7 @@
 from typing import Any
 
+from src.uplink_parse.core.compat import to_runnable
 from src.uplink_parse.core.task_strategy import BaseTaskStrategy
-from src.uplink_parse.core.utils import _to_coroutines
 
 
 def _extract_name(
@@ -19,7 +19,7 @@ def _extract_url(
 def _extract_coroutine_or_func(
     owner: Any, base: Any, acc: dict[str, Any], kwargs: dict[str, Any]
 ) -> dict[str, Any]:
-    return {"coroutine_or_func": _to_coroutines(acc["url"])}
+    return {"coroutine_or_func": to_runnable(*acc["url"])}
 
 
 def _extract_strategy(

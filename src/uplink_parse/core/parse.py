@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any
 
 from typing_extensions import Self
 
-from tests.test4 import _async_to_sync
+from src.uplink_parse.core.compat import async_to_sync
 
 try:
     from uplink import response_handler
@@ -30,26 +30,18 @@ from src.uplink_parse.core._strategies import (
 )
 from src.uplink_parse.core.cached import Cached
 from src.uplink_parse.core.ctx import ScraperCtx, ctx
-from src.uplink_parse.core.processor import _create_cache_parse_funcs, extract
+from src.uplink_parse.core.processor import BaseProcessor, extract
 from src.uplink_parse.core.task_runner import TaskRunner
 
 
 class _ParseObj(ParseGeneric[strategy, strategy_rt], Cached):
-    @property
-    def scraper(self) -> Self:
-        return cast(Self, ctx.scraper)
+    scraper: Self
+    response: strategy_rt
+    consumer: Any
+    request: Any
 
-    @property
-    def response(self) -> strategy_rt:
-        return cast(strategy_rt, ctx.response)
-
-    @property
-    def consumer(self) -> Any:
-        return ctx.consumer
-
-    @property
-    def request(self) -> Any:
-        return ctx.request
+    def __getattr__(self, item: str) -> Any:
+        return getattr(ctx, item)
 
 
 class BaseParse(_ParseObj[strategy, strategy_rt]):
@@ -63,7 +55,8 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
         _registry_params: dict[str, Any] | None = None,
     ) -> Any:
         instance = super().__new__(cls)
-        parse_funcs_meta = _create_cache_parse_funcs(
+
+        parse_funcs_meta = BaseProcessor.build_parse_meta(
             instance, **(_registry_params or {"check_mro": True})
         )
         task_runner = TaskRunner()
@@ -71,7 +64,7 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
             parse_funcs_meta=parse_funcs_meta, task_runner=task_runner
         )
         instance.__call__ = (  # type: ignore[method-assign]
-            instance.__call__ if is_async else _async_to_sync(instance.__call__)
+            instance.__call__ if is_async else async_to_sync(instance.__call__)
         )
         return instance if not is_decorator else parse(instance)
 

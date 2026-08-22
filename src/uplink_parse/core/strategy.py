@@ -9,8 +9,8 @@ from src.uplink_parse.core._generics import (
 )
 from src.uplink_parse.core.accessor import ResponseAccessor
 from src.uplink_parse.core.cached import Cached
+from src.uplink_parse.core.compat import await_or_return
 from src.uplink_parse.core.exceptions import ResponseParsingError, StrategyError
-from src.uplink_parse.core.utils import _to_awaitable
 
 
 class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):
@@ -24,7 +24,7 @@ class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):
                 )
 
             return self.transform(
-                await _to_awaitable(ResponseAccessor.get_any(response, *attrs))
+                await await_or_return(ResponseAccessor.get_any(response, *attrs))
             )
 
         except KeyError:
