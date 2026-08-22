@@ -3,12 +3,12 @@ from typing import Any
 
 from src.uplink_parse.core._dataclasses import _ParseMeta
 from src.uplink_parse.core._generics import input_rt_func
+from src.uplink_parse.core.cached import Cached
 from src.uplink_parse.core.exceptions import ProcessorCacheError, ProcessorError
 from src.uplink_parse.core.registry import BaseRegistry
-from src.uplink_parse.core.singleton import Singleton
 
 
-class BaseProcessor(BaseRegistry[input_rt_func, dict[str, Any]], Singleton):
+class BaseProcessor(BaseRegistry[input_rt_func, dict[str, Any]], Cached):
     @classmethod
     async def extract(
         cls, owner: Any, target: dict[str, Any] | None = None

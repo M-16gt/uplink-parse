@@ -28,13 +28,13 @@ from src.uplink_parse.core._strategies import (
     XMLResult,
     XMLStrategy,
 )
+from src.uplink_parse.core.cached import Cached
 from src.uplink_parse.core.ctx import ScraperCtx, ctx
 from src.uplink_parse.core.processor import _create_cache_parse_funcs, extract
-from src.uplink_parse.core.singleton import Singleton
 from src.uplink_parse.core.task_runner import TaskRunner
 
 
-class _ParseObj(ParseGeneric[strategy, strategy_rt], Singleton):
+class _ParseObj(ParseGeneric[strategy, strategy_rt], Cached):
     @property
     def scraper(self) -> Self:
         return cast(Self, ctx.scraper)

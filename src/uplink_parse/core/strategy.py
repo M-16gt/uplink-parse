@@ -8,12 +8,12 @@ from src.uplink_parse.core._generics import (
     output_data_from_func,
 )
 from src.uplink_parse.core.accessor import ResponseAccessor
+from src.uplink_parse.core.cached import Cached
 from src.uplink_parse.core.exceptions import ResponseParsingError, StrategyError
-from src.uplink_parse.core.singleton import Singleton
 from src.uplink_parse.core.utils import _to_awaitable
 
 
-class Strategy(StrategyGeneric[output_data_from_func, attr_name], Singleton):
+class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):
     async def __call__(self, response: Any) -> output_data_from_func:
         try:
             attrs = get_args(self.config_types["attr_name"])

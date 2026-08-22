@@ -4,11 +4,11 @@ import asyncio
 import inspect
 from typing import Any
 
+from src.uplink_parse.core.cached import Cached
 from src.uplink_parse.core.exceptions import StrategyNotFoundError
-from src.uplink_parse.core.singleton import Singleton
 
 
-class BaseTaskStrategy(Singleton):
+class BaseTaskStrategy(Cached):
     @staticmethod
     def _flush_batch(lst: list[Any], batch: list[Any]) -> None:
         for item in batch:
