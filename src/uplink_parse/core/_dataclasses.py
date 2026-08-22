@@ -48,7 +48,7 @@ class _ParseMeta:
                 _extract_coroutine_or_func,
                 _extract_strategy,
             ]
-        return cls(  # type: ignore[call-arg]
+        return cls(
             funcs=_transpose_dict_to_dataclass(
                 functools.reduce(
                     lambda acc, fn: {**acc, **fn(owner, base, acc, kwargs)},

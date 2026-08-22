@@ -10,8 +10,9 @@ repos:
     rev: v2.3.1
     hooks:
       - id: mypy
-        additional_dependencies: []
+        additional_dependencies:
+          - attrs>=26.1.0
         pass_filenames: false
         files: \.pyi?$
-        args: ["src", "--config-file=pyproject.toml"]
+        args: [ "src", "--config-file=pyproject.toml" ]
         language: python

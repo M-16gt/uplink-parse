@@ -53,6 +53,8 @@ class _ParseObj(ParseGeneric[strategy, strategy_rt], Singleton):
 
 
 class BaseParse(_ParseObj[strategy, strategy_rt]):
+    storage: Storage
+
     def __new__(
         cls,
         *,
@@ -65,7 +67,7 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
             instance, **(_registry_params or {"check_mro": True})
         )
         task_runner = TaskRunner()
-        instance.storage = Storage(  # type: ignore[attr-defined, call-arg]
+        instance.storage = Storage(
             parse_funcs_meta=parse_funcs_meta, task_runner=task_runner
         )
         instance.__call__ = (  # type: ignore[method-assign]
