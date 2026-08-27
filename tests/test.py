@@ -54,7 +54,7 @@ class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
 class PypiStats(uplink.Consumer):
     @PypiStatsProjectParse(is_async=True, strategy_params={"features": "lxml"})
     @uplink.get("/packages/{name}")
-    def project_data(self, name: uplink.Path):
+    async def project_data(self, name: uplink.Path):
         pass
 
 
@@ -67,7 +67,6 @@ async def main():
         )
 
         result = await client.project_data(name="requests")
-
         print(f"📦 Тип результата: {type(result)}")
         print(result)
 

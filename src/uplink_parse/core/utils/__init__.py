@@ -4,11 +4,9 @@ from typing import Any
 
 import attrs
 
-from src.uplink_parse.core.utils.cached import Cached
-
 # from src.uplink_parse.core.utils.ctx import ctx
 
-__all__ = ["Cached", "to_list", "obj_name", "transpose_dict_to_dataclass"]
+__all__ = ["to_list", "obj_name", "transpose_dict_to_dataclass"]
 
 
 def obj_name(obj: object) -> str:

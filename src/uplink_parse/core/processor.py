@@ -2,11 +2,10 @@ import asyncio
 from typing import Any
 
 from src.uplink_parse.core._generics import ProcessorGeneric, input_rt_func
-from src.uplink_parse.core.utils.cached import Cached
 from src.uplink_parse.core.utils.markers import Markers
 
 
-class BaseProcessor(ProcessorGeneric[input_rt_func, dict[str, Any]], Cached):
+class BaseProcessor(ProcessorGeneric[input_rt_func, dict[str, Any]]):
     def __call__(self, func: Any) -> Any:
         setattr(func, Markers.PROCESSOR_CLASS, self.__class__)
         return func

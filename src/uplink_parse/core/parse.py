@@ -6,6 +6,7 @@ from typing_extensions import Self
 
 from src.uplink_parse.core.parseable import Parseable
 from src.uplink_parse.core.tasks.compat import async_to_sync
+from uplink_parse.core.utils.singleton import get_instance
 
 try:
     from uplink import response_handler
@@ -29,11 +30,10 @@ from src.uplink_parse.core.strategies import (
     XMLStrategy,
 )
 from src.uplink_parse.core.tasks.task_runner import TaskRunner
-from src.uplink_parse.core.utils.cached import Cached
 from src.uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 
-class _ParseObj(ParseGeneric[strategy, strategy_rt], Cached):
+class _ParseObj(ParseGeneric[strategy, strategy_rt]):
     scraper: Self
     response: strategy_rt
     consumer: Any
@@ -55,9 +55,7 @@ class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
     ) -> Any:
         instance = super().__new__(cls)
 
-        parse_funcs_meta = _ParseMeta.build_all(
-            instance,
-        )
+        parse_funcs_meta = _ParseMeta.build_all(instance)
         task_runner = TaskRunner()
         instance.storage = Storage(
             parse_funcs_meta=parse_funcs_meta,
@@ -79,15 +77,17 @@ class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
             scraper=self,
             request=args[-1],
         ) as _:
+            start = time.time()
             if self.use_parse_response():
                 ctx.response = await self.parse_response()
+                print(time.time() - start)
             start = time.time()
             result = await extract(self, {})
             print(time.time() - start)
             return result
 
     async def parse_response(self) -> Any:
-        return await self.config_types["strategy"]()(
+        return await get_instance(self.config_types["strategy"])(
             ctx.request, **self.storage.strategy_params
         )
 
@@ -109,6 +109,4 @@ class BytesParse(BaseParse[BytesStrategy, BytesResult]): ...
 
 
 def parse(cls: BaseParse[Any, Any]) -> Any:
-    """Декоратор для интеграции с uplink."""
-    h = response_handler(cls.__call__, requires_consumer=True)
-    return h
+    return response_handler(cls.__call__, requires_consumer=True)

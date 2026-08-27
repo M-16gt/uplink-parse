@@ -1,6 +1,7 @@
 from typing import Any
 
 from src.uplink_parse.core.processor import BaseProcessor
+from uplink_parse.core.utils.singleton import get_instance
 
 __all__ = ["field"]
 
@@ -14,4 +15,4 @@ class _Field(BaseProcessor[Any]):
         return target
 
 
-field = _Field()
+field = get_instance(_Field)

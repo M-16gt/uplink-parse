@@ -8,7 +8,6 @@ from typing import Any, Callable, Coroutine
 try:
     import nest_asyncio
 
-    nest_asyncio.apply()
     _NEST_ASYNCIO = True
 except ImportError:
     _NEST_ASYNCIO = False
@@ -23,6 +22,7 @@ def async_to_sync(async_func: Any) -> Any:
             return asyncio.run(async_func(*args, **kwargs))
 
         if _NEST_ASYNCIO:
+            nest_asyncio.apply()
             return loop.run_until_complete(async_func(*args, **kwargs))
 
         raise RuntimeError(

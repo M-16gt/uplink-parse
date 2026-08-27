@@ -6,10 +6,12 @@ from typing import Any
 
 from src.uplink_parse.core.exceptions import StrategyNotFoundError
 from src.uplink_parse.core.utils import to_list
-from src.uplink_parse.core.utils.cached import Cached
+from uplink_parse.core.utils.singleton import get_instance
 
 
-class BaseTaskStrategy(Cached):
+class BaseTaskStrategy:
+    __slots__ = ()
+
     @staticmethod
     def _flush_batch(lst: list[Any], batch: list[Any]) -> None:
         for item in batch:
@@ -34,7 +36,7 @@ class BaseTaskStrategy(Cached):
     def get_strategy(cls, target: Any) -> object:
         for strategy in cls.__subclasses__():
             if strategy.is_supported(target):
-                return strategy()
+                return get_instance(strategy)
         raise StrategyNotFoundError(
             f"No BaseTaskStrategy subclass supports target {target!r}.",
             details={"target": target},

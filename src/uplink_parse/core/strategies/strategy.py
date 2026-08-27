@@ -10,10 +10,11 @@ from src.uplink_parse.core._generics import (
 from src.uplink_parse.core.exceptions import ResponseParsingError, StrategyError
 from src.uplink_parse.core.strategies.accessor import ResponseAccessor
 from src.uplink_parse.core.tasks.compat import await_or_return
-from src.uplink_parse.core.utils.cached import Cached
 
 
-class Strategy(StrategyGeneric[output_data_from_func, attr_name], Cached):
+class Strategy(StrategyGeneric[output_data_from_func, attr_name]):
+    __slots__ = ()
+
     async def __call__(self, response: Any, **params: Any) -> output_data_from_func:
         try:
             attrs = get_args(self.config_types["attr_name"])
