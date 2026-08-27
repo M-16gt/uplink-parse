@@ -5,9 +5,10 @@ from typing import Any
 import attrs
 
 from src.uplink_parse.core.utils.cached import Cached
-from src.uplink_parse.core.utils.ctx import ctx
 
-__all__ = ["Cached", "ctx", "to_list", "obj_name"]
+# from src.uplink_parse.core.utils.ctx import ctx
+
+__all__ = ["Cached", "to_list", "obj_name", "transpose_dict_to_dataclass"]
 
 
 def obj_name(obj: object) -> str:
@@ -45,7 +46,7 @@ def _has_async(*callables: Callable[..., Any]) -> bool:
     return any(callable(c) and inspect.iscoroutinefunction(c) for c in callables)
 
 
-def _transpose_dict_to_dataclass(
+def transpose_dict_to_dataclass(
     data: dict[str, list[Any]], cls: type[attrs.AttrsInstance]
 ) -> list[Any]:
     field_names = tuple(f.name for f in attrs.fields(cls))

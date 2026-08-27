@@ -6,12 +6,12 @@ import aiohttp
 import uplink
 
 start = time.time()
-from uplink_parse.core.parse import BaseParse
+from src.uplink_parse.core.parse import BaseParse
 from src.uplink_parse.core.strategies.bs4 import BS4Strategy, BS4Result
 
-from uplink_parse.decorators.field import field
-from uplink_parse.decorators.fields import fields
-from uplink_parse.future import add_builder_to_ctx
+from src.uplink_parse.decorators.field import field
+from src.uplink_parse.decorators.fields import fields
+from src.uplink_parse.future import add_builder_to_ctx
 
 
 class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
@@ -35,7 +35,6 @@ class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
 
     @field
     def package_name(self):
-
         return self.response.select("section > h1")[0].get_text(strip=True)
 
     @field
@@ -53,7 +52,7 @@ class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
 
 @add_builder_to_ctx
 class PypiStats(uplink.Consumer):
-    @PypiStatsProjectParse(is_async=True)
+    @PypiStatsProjectParse(is_async=True, strategy_params={"features": "lxml"})
     @uplink.get("/packages/{name}")
     def project_data(self, name: uplink.Path):
         pass

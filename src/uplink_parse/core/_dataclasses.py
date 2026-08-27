@@ -1,21 +1,15 @@
 from __future__ import annotations
 
-import functools
 from collections.abc import Awaitable, Callable
 from typing import TYPE_CHECKING, Any
 
 import attrs
 
-from src.uplink_parse.core._extractors import (
-    _extract_coroutine_or_func,
-    _extract_name,
-    _extract_strategy,
-    _extract_url,
-)
-from src.uplink_parse.core.utils import _transpose_dict_to_dataclass
+from src.uplink_parse.core.extractors import ExtractorChain
+from src.uplink_parse.core.utils import transpose_dict_to_dataclass
 
 if TYPE_CHECKING:
-    from uplink_parse.core.tasks.task_runner import TaskRunner
+    from src.uplink_parse.core.tasks.task_runner import TaskRunner
 
 
 @attrs.define
@@ -38,23 +32,14 @@ class _ParseMeta:
         cls,
         base: type,
         owner: type | None = None,
-        extractors: list[Callable[..., Any]] | None = None,
+        extractor_chain: ExtractorChain | None = None,
         **kwargs: Any,
     ) -> _ParseMeta:
-        if extractors is None:
-            extractors = [
-                _extract_name,
-                _extract_url,
-                _extract_coroutine_or_func,
-                _extract_strategy,
-            ]
+
+        chain = extractor_chain or ExtractorChain()
         return cls(
-            funcs=_transpose_dict_to_dataclass(
-                functools.reduce(
-                    lambda acc, fn: {**acc, **fn(owner, base, acc, kwargs)},
-                    extractors,
-                    {},
-                ),
+            funcs=transpose_dict_to_dataclass(
+                chain.run(owner, base, **kwargs),
                 FuncMeta,
             )
         )

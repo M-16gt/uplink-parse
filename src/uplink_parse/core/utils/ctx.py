@@ -16,6 +16,8 @@ _cv_ctx: contextvars.ContextVar[ScraperCtxData | None] = contextvars.ContextVar(
 
 
 class CtxProxy:
+    response: Any
+
     @staticmethod
     def _get_data() -> ScraperCtxData:
         data = _cv_ctx.get()

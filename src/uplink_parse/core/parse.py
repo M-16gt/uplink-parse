@@ -4,7 +4,7 @@ from typing import Any
 
 from typing_extensions import Self
 
-from uplink_parse.core.tasks.compat import async_to_sync
+from src.uplink_parse.core.tasks.compat import async_to_sync
 
 try:
     from uplink import response_handler
@@ -27,9 +27,9 @@ from src.uplink_parse.core.strategies import (
     XMLResult,
     XMLStrategy,
 )
+from src.uplink_parse.core.tasks.task_runner import TaskRunner
 from src.uplink_parse.core.utils.cached import Cached
-from uplink_parse.core.tasks.task_runner import TaskRunner
-from uplink_parse.core.utils.ctx import ScraperCtx, ctx
+from src.uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 
 class _ParseObj(ParseGeneric[strategy, strategy_rt], Cached):
@@ -87,10 +87,9 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
             print(time.time() - start)
             return result
 
-    @classmethod
-    async def parse_response(cls) -> Any:
-        return await cls.config_types["strategy"]()(
-            ctx.request, cls.storage.strategy_params
+    async def parse_response(self) -> Any:
+        return await self.config_types["strategy"]()(
+            ctx.request, **self.storage.strategy_params
         )
 
     @staticmethod
