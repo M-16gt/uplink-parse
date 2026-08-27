@@ -1,25 +1,22 @@
 import asyncio
 from typing import Any
 
-from src.uplink_parse.core._dataclasses import _ParseMeta
-from src.uplink_parse.core._generics import input_rt_func
-from src.uplink_parse.core.exceptions import ProcessorCacheError, ProcessorError
-from src.uplink_parse.core.registry import BaseRegistry
+from src.uplink_parse.core._generics import ProcessorGeneric, input_rt_func
 from src.uplink_parse.core.utils.cached import Cached
+from src.uplink_parse.core.utils.markers import Markers
 
 
-class BaseProcessor(BaseRegistry[input_rt_func, dict[str, Any]], Cached):
-    @classmethod
-    async def extract(
-        cls, owner: Any, target: dict[str, Any] | None = None
-    ) -> dict[str, Any]:
-        target = {} if target is None else target
-        return await cls.process(owner, target)
+class BaseProcessor(ProcessorGeneric[input_rt_func, dict[str, Any]], Cached):
+    def __call__(self, func: Any) -> Any:
+        setattr(func, Markers.PROCESSOR_CLASS, self.__class__)
+        return func
 
     @classmethod
     async def process(cls, owner: Any, target: dict[str, Any]) -> dict[str, Any]:
+        from uplink_parse.core.exceptions import ProcessorCacheError
+
         try:
-            target_meta = owner.storage.parse_funcs_meta[cls.__name__]
+            target_meta = owner.storage.parse_funcs_meta[cls]
         except (AttributeError, KeyError) as exc:
             raise ProcessorCacheError(
                 f"Parse cache missing for processor {cls.__name__}. "
@@ -34,13 +31,6 @@ class BaseProcessor(BaseRegistry[input_rt_func, dict[str, Any]], Cached):
             )
         return target
 
-    @classmethod
-    def build_parse_meta(cls, owner: Any, **kwargs: Any) -> dict[str, _ParseMeta]:
-        return {
-            base.__name__: _ParseMeta.from_extractors(base, owner, **kwargs)
-            for base in cls.__subclasses__()
-        }
-
     @staticmethod
     def _populate_target(
         result: dict[str, Any], target: dict[str, Any]
@@ -52,10 +42,15 @@ async def extract(owner: Any, target: dict[str, Any] | None = None) -> dict[str,
     target = {} if target is None else target
     try:
         await asyncio.gather(
-            *[base.extract(owner, target) for base in BaseProcessor.__subclasses__()]
+            *[
+                proc_cls.process(owner, target)
+                for proc_cls in owner.storage.parse_funcs_meta
+            ]
         )
         return target
     except Exception as exc:
+        from uplink_parse.core.exceptions import ProcessorError
+
         if isinstance(exc, ProcessorError):
             raise
         raise ProcessorError(

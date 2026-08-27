@@ -67,21 +67,11 @@ async def main():
         )
 
         result = await client.project_data(name="requests")
-        # result = await client.project_data(name="requests")
-        # print(f"✅ Финальный результат в коде: {result}")
+
         print(f"📦 Тип результата: {type(result)}")
         print(result)
 
 
-if __name__ == "__main__":
-    import asyncio
+import asyncio
 
-    asyncio.run(main())
-
-# client = PypiStats(
-#     base_url="https://pypistats.org",
-#
-# )
-# result =client.project_data(name="requests")
-# print(result)
-# print(PypiStatsProjectParse().handle_response)
+asyncio.run(main())

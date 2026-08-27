@@ -40,6 +40,8 @@ class Quotes(uplink.Consumer):
 #         )
 # print(client.base())
 async def main():
+    import cProfile
+
     # Создаем сессию явно, чтобы управлять её жизненным циклом
     async with aiohttp.ClientSession() as session:
         client = Quotes(

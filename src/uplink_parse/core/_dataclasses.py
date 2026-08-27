@@ -5,7 +5,6 @@ from typing import TYPE_CHECKING, Any
 
 import attrs
 
-from src.uplink_parse.core.extractors import ExtractorChain
 from src.uplink_parse.core.utils import transpose_dict_to_dataclass
 
 if TYPE_CHECKING:
@@ -28,18 +27,32 @@ class _ParseMeta:
         return not self.funcs
 
     @classmethod
+    def build_all(
+        cls,
+        owner: Any,
+        **kwargs: Any,
+    ) -> dict[type[Any], _ParseMeta]:
+
+        return {
+            processor_cls: cls.from_extractors(processor_cls, owner, **kwargs)
+            for processor_cls in owner.parse_fields
+        }
+
+    @classmethod
     def from_extractors(
         cls,
         base: type,
         owner: type | None = None,
-        extractor_chain: ExtractorChain | None = None,
+        extractors: Any | None = None,
         **kwargs: Any,
     ) -> _ParseMeta:
+        if extractors is None:
+            from src.uplink_parse.core.extractors import ExtractorChain
 
-        chain = extractor_chain or ExtractorChain()
+            extractors = ExtractorChain()
         return cls(
             funcs=transpose_dict_to_dataclass(
-                chain.run(owner, base, **kwargs),
+                extractors.run(owner, base, **kwargs),
                 FuncMeta,
             )
         )
@@ -56,6 +69,6 @@ class ScraperCtxData:
 
 @attrs.define(slots=False)
 class Storage:
-    parse_funcs_meta: dict[str, _ParseMeta]
+    parse_funcs_meta: dict[type, _ParseMeta]
     task_runner: TaskRunner
     strategy_params: dict[str, Any] = attrs.field(factory=dict)

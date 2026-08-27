@@ -13,7 +13,7 @@ input_rt_func = TypeVar("input_rt_func")
 output_rt_func = TypeVar("output_rt_func")
 
 
-class RegistryGeneric(GenericBase, Generic[input_rt_func, output_rt_func]): ...
+class ProcessorGeneric(GenericBase, Generic[input_rt_func, output_rt_func]): ...
 
 
 output_data_from_func = TypeVar("output_data_from_func")

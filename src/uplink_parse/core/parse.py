@@ -4,6 +4,7 @@ from typing import Any
 
 from typing_extensions import Self
 
+from src.uplink_parse.core.parseable import Parseable
 from src.uplink_parse.core.tasks.compat import async_to_sync
 
 try:
@@ -14,9 +15,9 @@ except ImportError:
         return handler
 
 
-from src.uplink_parse.core._dataclasses import Storage
+from src.uplink_parse.core._dataclasses import Storage, _ParseMeta
 from src.uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
-from src.uplink_parse.core.processor import BaseProcessor, extract
+from src.uplink_parse.core.processor import extract
 from src.uplink_parse.core.strategies import (
     BytesResult,
     BytesStrategy,
@@ -42,7 +43,7 @@ class _ParseObj(ParseGeneric[strategy, strategy_rt], Cached):
         return getattr(ctx, item)
 
 
-class BaseParse(_ParseObj[strategy, strategy_rt]):
+class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
     storage: Storage
 
     def __new__(
@@ -50,14 +51,12 @@ class BaseParse(_ParseObj[strategy, strategy_rt]):
         *,
         is_decorator: bool = True,
         is_async: bool = False,
-        registry_params: dict[str, Any] | None = None,
         strategy_params: dict[str, Any] | None = None,
     ) -> Any:
         instance = super().__new__(cls)
 
-        parse_funcs_meta = BaseProcessor.build_parse_meta(
+        parse_funcs_meta = _ParseMeta.build_all(
             instance,
-            **(registry_params if registry_params is not None else {"check_mro": True}),
         )
         task_runner = TaskRunner()
         instance.storage = Storage(

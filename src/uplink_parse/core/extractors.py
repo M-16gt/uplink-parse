@@ -1,6 +1,3 @@
-# core/extractors.py
-from __future__ import annotations
-
 from collections.abc import Callable
 from typing import Any, cast
 
@@ -21,7 +18,7 @@ class ExtractorChain:
     def extract_name(
         owner: Any, base: Any, acc: dict[str, Any], kwargs: dict[str, Any]
     ) -> list[str]:
-        return list(base.get_registered(owner.__class__, **kwargs))
+        return list(owner.parse_fields.get(base, []))
 
     @staticmethod
     def extract_url(
