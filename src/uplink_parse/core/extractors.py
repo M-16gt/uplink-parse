@@ -1,8 +1,10 @@
 from collections.abc import Callable
 from typing import Any, cast
 
+from uplink_parse.core.hooks import HookSpec
 from uplink_parse.core.tasks.compat import to_runnable
 from uplink_parse.core.tasks.task_strategy import BaseTaskStrategy
+from uplink_parse.core.utils.markers import Markers
 
 
 class ExtractorChain:
@@ -10,9 +12,16 @@ class ExtractorChain:
         return [
             ("name", self.extract_name),
             ("url", self.extract_url),
+            ("hooks", self.extract_hooks),
             ("coroutine_or_func", self.extract_coroutine_or_func),
             ("strategy", self.extract_strategy),
         ]
+
+    @staticmethod
+    def extract_hooks(
+        owner: Any, base: Any, acc: dict[str, Any], kwargs: dict[str, Any]
+    ) -> list[HookSpec]:
+        return [getattr(f, Markers.HOOKS, HookSpec()) for f in acc["url"]]
 
     @staticmethod
     def extract_name(

@@ -24,7 +24,7 @@ class ParselParse(BaseParse[ParselStrategy, ParselResult]):
             yield await self.consumer.base2(link)
 
 
-@ParselParse(is_async=True)
+@ParselParse()
 class Quotes(uplink.Consumer):
     @uplink.get("/tag/humor/{name}")
     def base(self, name: uplink.Path = ""):
@@ -51,7 +51,7 @@ async def main():
         tasks = [client.base() for i in range(1)]
 
         for data in await asyncio.gather(*tasks):
-            print(len(data["data"]))
+            print(data)
 
 
 asyncio.run(main())

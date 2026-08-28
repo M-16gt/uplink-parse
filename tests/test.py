@@ -1,6 +1,7 @@
 import asyncio
 import re
 import time
+from collections.abc import Callable, Coroutine
 
 import aiohttp
 import uplink
@@ -12,6 +13,7 @@ from src.uplink_parse.core.strategies.bs4 import BS4Strategy, BS4Result
 from src.uplink_parse.decorators.field import field
 from src.uplink_parse.decorators.fields import fields
 from src.uplink_parse.future import add_builder_to_ctx
+from src.uplink_parse.core.hooks import prehook, SKIP
 
 
 class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
@@ -30,8 +32,7 @@ class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
 
     def extract_text(self, pattern):
         match = re.search(pattern, self.response.get_text(), re.DOTALL | re.IGNORECASE)
-        result = match.group(1).strip() if match else None
-        return result
+        return match.group(1).strip() if match else None
 
     @field
     def package_name(self):
@@ -42,6 +43,7 @@ class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
         return self.response.find("a", string="PyPI page")["href"]
 
     @field
+    @prehook(lambda func_meta: SKIP)
     def homepage(self):
         return self.response.find("a", string="Home page")["href"]
 
@@ -52,9 +54,9 @@ class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
 
 @add_builder_to_ctx
 class PypiStats(uplink.Consumer):
-    @PypiStatsProjectParse(is_async=True, strategy_params={"features": "lxml"})
+    @PypiStatsProjectParse(strategy_params={"features": "lxml"})
     @uplink.get("/packages/{name}")
-    async def project_data(self, name: uplink.Path):
+    def project_data(self, name: uplink.Path) -> Callable | Coroutine:
         pass
 
 

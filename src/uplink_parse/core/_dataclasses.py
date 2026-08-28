@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Any
 
 import attrs
 
+from src.uplink_parse.core.hooks import HookSpec
 from src.uplink_parse.core.utils import transpose_dict_to_dataclass
 
 if TYPE_CHECKING:
@@ -17,6 +18,7 @@ class FuncMeta:
     url: Callable[..., Any]
     coroutine_or_func: Callable[..., Any] | Awaitable[Any]
     strategy: Callable[..., Any]
+    hooks: HookSpec = attrs.field(factory=HookSpec)
 
 
 @attrs.define
