@@ -89,7 +89,7 @@ ignore = [
     "UP007",
     "UP035",
 ]
-exclude = ["src/uplink_parse/future/*", "tests/*"]
+exclude = ["src/uplink_parse/future/*", "examples/*"]
 
 [tool.ruff.lint.pydocstyle]
 convention = "google"
@@ -118,5 +118,5 @@ exclude = [
     "src/uplink_parse/future/",
 ]
 [[tool.mypy.overrides]]
-module = "tests.*"
+module = "examples.*"
 ignore_errors = true
