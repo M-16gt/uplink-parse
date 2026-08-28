@@ -4,10 +4,10 @@ import asyncio
 from collections.abc import Callable
 from typing import Any, ClassVar
 
-from src.uplink_parse.core._dataclasses import FuncMeta
-from src.uplink_parse.core.hooks import SKIP, HookSpec
-from src.uplink_parse.core.tasks.compat import await_or_return
-from src.uplink_parse.core.tasks.task_strategy import BaseTaskStrategy
+from uplink_parse.core._dataclasses import FuncMeta
+from uplink_parse.core.hooks import SKIP, HookSpec
+from uplink_parse.core.tasks.compat import await_or_return
+from uplink_parse.core.tasks.task_strategy import BaseTaskStrategy
 
 
 class TaskRunner:

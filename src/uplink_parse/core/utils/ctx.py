@@ -3,8 +3,8 @@ from __future__ import annotations
 import contextvars
 from typing import Any, Literal
 
-from src.uplink_parse.core._dataclasses import ScraperCtxData
-from src.uplink_parse.core.exceptions import NoActiveContextError
+from uplink_parse.core._dataclasses import ScraperCtxData
+from uplink_parse.core.exceptions import NoActiveContextError
 
 _cv_builder: contextvars.ContextVar[Any] = contextvars.ContextVar(
     __package__ + ".builder", default=None

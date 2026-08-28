@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.uplink_parse.core.processor import BaseProcessor
+from uplink_parse.core.processor import BaseProcessor
 from uplink_parse.core.utils.singleton import get_instance
 
 __all__ = ["field"]

@@ -1,9 +1,9 @@
 import asyncio
 from typing import Any
 
-from src.uplink_parse.core._generics import ProcessorGeneric, input_rt_func
-from src.uplink_parse.core.utils.markers import Markers
+from uplink_parse.core._generics import ProcessorGeneric, input_rt_func
 from uplink_parse.core.utils import to_dict
+from uplink_parse.core.utils.markers import Markers
 
 
 class BaseProcessor(ProcessorGeneric[input_rt_func, dict[str, Any]]):

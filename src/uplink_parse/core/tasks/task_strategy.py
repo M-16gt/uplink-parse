@@ -4,8 +4,8 @@ import asyncio
 import inspect
 from typing import Any
 
-from src.uplink_parse.core.exceptions import StrategyNotFoundError
-from src.uplink_parse.core.utils import to_list
+from uplink_parse.core.exceptions import StrategyNotFoundError
+from uplink_parse.core.utils import to_list
 from uplink_parse.core.utils.singleton import get_instance
 
 

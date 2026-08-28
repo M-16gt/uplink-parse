@@ -6,7 +6,7 @@ from typing import Any
 
 from typing_extensions import Self
 
-from src.uplink_parse.core.parseable import Parseable
+from uplink_parse.core.parseable import Parseable
 from uplink_parse.core.utils import to_dict
 from uplink_parse.core.utils.singleton import get_instance
 
@@ -18,10 +18,10 @@ except ImportError:
         return handler
 
 
-from src.uplink_parse.core._dataclasses import Storage, _ParseMeta
-from src.uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
-from src.uplink_parse.core.processor import extract_all
-from src.uplink_parse.core.strategies import (
+from uplink_parse.core._dataclasses import Storage, _ParseMeta
+from uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
+from uplink_parse.core.processor import extract_all
+from uplink_parse.core.strategies import (
     BytesResult,
     BytesStrategy,
     JSONResult,
@@ -31,8 +31,8 @@ from src.uplink_parse.core.strategies import (
     XMLResult,
     XMLStrategy,
 )
-from src.uplink_parse.core.tasks.task_runner import TaskRunner
-from src.uplink_parse.core.utils.ctx import ScraperCtx, ctx
+from uplink_parse.core.tasks.task_runner import TaskRunner
+from uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 
 class _ParseObj(ParseGeneric[strategy, strategy_rt]):

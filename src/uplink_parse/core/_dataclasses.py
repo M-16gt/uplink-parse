@@ -5,11 +5,11 @@ from typing import TYPE_CHECKING, Any
 
 import attrs
 
-from src.uplink_parse.core.hooks import HookSpec
-from src.uplink_parse.core.utils import transpose_dict_to_dataclass
+from uplink_parse.core.hooks import HookSpec
+from uplink_parse.core.utils import transpose_dict_to_dataclass
 
 if TYPE_CHECKING:
-    from src.uplink_parse.core.tasks.task_runner import TaskRunner
+    from uplink_parse.core.tasks.task_runner import TaskRunner
 
 
 @attrs.define
@@ -49,7 +49,7 @@ class _ParseMeta:
         **kwargs: Any,
     ) -> _ParseMeta:
         if extractors is None:
-            from src.uplink_parse.core.extractors import ExtractorChain
+            from uplink_parse.core.extractors import ExtractorChain
 
             extractors = ExtractorChain()
         return cls(

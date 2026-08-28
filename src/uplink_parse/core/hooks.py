@@ -5,7 +5,7 @@ from typing import Any
 
 import attrs
 
-from src.uplink_parse.core.utils.markers import Markers
+from uplink_parse.core.utils.markers import Markers
 
 __all__ = ["SKIP", "HookSpec", "prehook", "posthook", "errorhook"]
 

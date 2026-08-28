@@ -2,7 +2,7 @@ from typing import Any, Literal, TypeAlias
 
 from parsel import Selector
 
-from src.uplink_parse.core.strategies.strategy import Strategy
+from uplink_parse.core.strategies.strategy import Strategy
 
 ParselResult: TypeAlias = Selector
 

@@ -1,6 +1,6 @@
 from typing import Generic, TypeVar
 
-from src.uplink_parse.core.generic_base import GenericBase
+from uplink_parse.core.generic_base import GenericBase
 
 strategy = TypeVar("strategy")
 strategy_rt = TypeVar("strategy_rt")

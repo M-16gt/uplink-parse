@@ -2,7 +2,7 @@ from typing import Any, Literal, TypeAlias
 
 from bs4 import BeautifulSoup
 
-from src.uplink_parse.core.strategies.strategy import Strategy
+from uplink_parse.core.strategies.strategy import Strategy
 
 BS4Result: TypeAlias = BeautifulSoup
 

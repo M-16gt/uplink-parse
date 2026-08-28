@@ -2,7 +2,7 @@ from typing import Any
 
 import attrs
 
-# from src.uplink_parse.core.utils.ctx import ctx
+# from uplink_parse.core.utils.ctx import ctx
 
 __all__ = ["to_list", "obj_name", "transpose_dict_to_dataclass", "to_dict"]
 

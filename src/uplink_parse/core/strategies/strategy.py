@@ -2,14 +2,14 @@ from __future__ import annotations
 
 from typing import Any, cast, get_args
 
-from src.uplink_parse.core._generics import (
+from uplink_parse.core._generics import (
     StrategyGeneric,
     attr_name,
     output_data_from_func,
 )
-from src.uplink_parse.core.exceptions import ResponseParsingError, StrategyError
-from src.uplink_parse.core.strategies.accessor import ResponseAccessor
-from src.uplink_parse.core.tasks.compat import await_or_return
+from uplink_parse.core.exceptions import ResponseParsingError, StrategyError
+from uplink_parse.core.strategies.accessor import ResponseAccessor
+from uplink_parse.core.tasks.compat import await_or_return
 
 
 class Strategy(StrategyGeneric[output_data_from_func, attr_name]):

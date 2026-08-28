@@ -7,13 +7,13 @@ import aiohttp
 import uplink
 
 start = time.time()
-from src.uplink_parse.core.parse import BaseParse
-from src.uplink_parse.core.strategies.bs4 import BS4Strategy, BS4Result
+from uplink_parse.core.parse import BaseParse
+from uplink_parse.core.strategies.bs4 import BS4Strategy, BS4Result
 
-from src.uplink_parse.decorators.field import field
-from src.uplink_parse.decorators.fields import fields
-from src.uplink_parse.future import add_builder_to_ctx
-from src.uplink_parse.core.hooks import prehook, SKIP
+from uplink_parse.decorators.field import field
+from uplink_parse.decorators.fields import fields
+from uplink_parse.future import add_builder_to_ctx
+from uplink_parse.core.hooks import prehook, SKIP
 
 
 class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):

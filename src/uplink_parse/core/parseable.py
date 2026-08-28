@@ -1,6 +1,6 @@
 from typing import Any
 
-from src.uplink_parse.core.utils.markers import Markers
+from uplink_parse.core.utils.markers import Markers
 
 
 class Parseable:
