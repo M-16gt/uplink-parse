@@ -1,5 +1,7 @@
 from typing import Any, TypeVar, cast, overload
 
+from uplink_parse.core.utils import is_stateless
+
 T = TypeVar("T")
 
 _instances: dict[type[Any], Any] = {}
@@ -7,6 +9,8 @@ _instances: dict[type[Any], Any] = {}
 
 def _get_instance(cls: type[T]) -> T:
     if cls not in _instances:
+        if not is_stateless(cls):
+            raise TypeError(f"{cls} must be stateless, not {cls.__name__}")
         _instances[cls] = cls()
     return cast(T, _instances[cls])
 

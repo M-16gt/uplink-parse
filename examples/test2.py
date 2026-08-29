@@ -48,9 +48,12 @@ async def main():
             base_url="https://quotes.toscrape.com",
             client=uplink.clients.AiohttpClient(session=session),
         )
-        tasks = [client.base() for i in range(1)]
+        tasks = [client.base() for i in range(100)]
+        import time
 
+        start = time.time()
         for data in await asyncio.gather(*tasks):
+            print(time.time() - start)
             print(data)
 
 

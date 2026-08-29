@@ -1,10 +1,16 @@
-from typing import Any
+from typing import Any, cast
 
 import attrs
 
 # from uplink_parse.core.utils.ctx import ctx
 
-__all__ = ["to_list", "obj_name", "transpose_dict_to_dataclass", "to_dict"]
+__all__ = [
+    "to_list",
+    "obj_name",
+    "transpose_dict_to_dataclass",
+    "to_dict",
+    "is_stateless",
+]
 
 
 def obj_name(obj: object) -> str:
@@ -34,3 +40,10 @@ def transpose_dict_to_dataclass(
     values_lists = tuple(data[name] for name in field_names)
 
     return [cls(*args) for args in zip(*values_lists, strict=True)]
+
+
+def is_stateless(cls: Any) -> bool:
+    init = cls.__init__
+    if init is object.__init__:
+        return True
+    return cast(bool, init.__code__.co_argcount == 1)

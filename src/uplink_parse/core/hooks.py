@@ -33,7 +33,7 @@ class HookSpec:
     post: list[Callable[..., Any]] = attrs.field(factory=list)
     error: list[Callable[..., Any]] = attrs.field(factory=list)
 
-    def is_empty(self) -> bool:
+    def is_nan_obj(self) -> bool:
         return not (self.pre or self.post or self.error)
 
     def __add__(self, other: HookSpec) -> HookSpec:
