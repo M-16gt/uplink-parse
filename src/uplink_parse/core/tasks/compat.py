@@ -19,10 +19,10 @@ _CO_ASYNC_GENERATOR = inspect.CO_ASYNC_GENERATOR
 
 
 def _code_flags(func: Any) -> int:
-    func = getattr(func, "func", func)
+    func = getattr(func, "__func__", func)
     while isinstance(func, functools.partial):
         func = func.func
-    code = getattr(func, "code", None)
+    code = getattr(func, "__code__", None)
     return code.co_flags if code is not None else 0
 
 

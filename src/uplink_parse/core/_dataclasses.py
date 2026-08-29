@@ -12,6 +12,19 @@ if TYPE_CHECKING:
     from uplink_parse.core.tasks.task_runner import TaskRunner
 
 
+class _SizedMeta:
+    __slots__ = ()
+
+    def __len__(self) -> int:
+        raise NotImplementedError
+
+    def __bool__(self) -> bool:
+        return bool(len(self))
+
+    def is_empty(self) -> bool:
+        return not self
+
+
 @attrs.frozen
 class FuncMeta:
     name: str
@@ -21,8 +34,11 @@ class FuncMeta:
 
 
 @attrs.frozen
-class FuncsMeta:
+class FuncsMeta(_SizedMeta):
     funcs: list[FuncMeta] = attrs.field(factory=list)
+
+    def __len__(self) -> int:
+        return len(self.funcs)
 
     @classmethod
     def build(
@@ -43,16 +59,13 @@ class FuncsMeta:
             )
         )
 
-    def is_empty(self) -> bool:
-        return not self.funcs
 
+@attrs.frozen
+class _ParseMeta(_SizedMeta):
+    by_processor: dict[type, FuncsMeta] = attrs.field(factory=dict)
 
-@attrs.define
-class _ParseMeta:
-    funcs: dict[type, FuncsMeta] = attrs.field(factory=dict)
-
-    def is_empty(self) -> bool:
-        return not self.funcs
+    def __len__(self) -> int:
+        return len(self.by_processor)
 
     @classmethod
     def build(

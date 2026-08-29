@@ -40,7 +40,7 @@ async def main():
             base_url="https://quotes.toscrape.com",
             client=uplink.clients.AiohttpClient(session=session),
         )
-        tasks = [client.base() for _ in range(100)]
+        tasks = [client.base() for _ in range(25)]
         import time
 
         start = time.time()

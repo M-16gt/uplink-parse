@@ -5,7 +5,6 @@ from typing import Any
 
 from uplink_parse.core.exceptions import StrategyNotFoundError
 from uplink_parse.core.tasks.compat import (
-    await_or_return,
     isasyncgenfunction,
     iscoroutinefunction,
     isgeneratorfunction,
@@ -83,7 +82,18 @@ class _FuncSyncGenStrategy(BaseTaskStrategy):
         self._flush_batch(lst, data)
 
 
-class _CallableStrategy(BaseTaskStrategy):
+class _FuncAsyncStrategy(BaseTaskStrategy):
+    @staticmethod
+    def is_supported(target: Any) -> bool:
+        return iscoroutinefunction(target)
+
+    async def __call__(
+        self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
+    ) -> None:
+        self._flush_batch(lst, [await target()])
+
+
+class _FuncSyncStrategy(BaseTaskStrategy):
     @staticmethod
     def is_supported(target: Any) -> bool:
         return callable(target)
@@ -91,9 +101,6 @@ class _CallableStrategy(BaseTaskStrategy):
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
-        if use_thread and not iscoroutinefunction(target):
-            result = await asyncio.to_thread(target)
-        else:
-            result = target()
-        result = await await_or_return(result)
-        self._flush_batch(lst, [result])
+        self._flush_batch(
+            lst, [await asyncio.to_thread(target) if use_thread else target()]
+        )
