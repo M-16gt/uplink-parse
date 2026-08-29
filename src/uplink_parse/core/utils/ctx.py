@@ -6,8 +6,8 @@ from typing import Any, Literal
 from uplink_parse.core._dataclasses import ScraperCtxData
 from uplink_parse.core.exceptions import NoActiveContextError
 
-_cv_builder: contextvars.ContextVar[Any] = contextvars.ContextVar(
-    __package__ + ".builder", default=None
+_cv_request: contextvars.ContextVar[Any] = contextvars.ContextVar(
+    __package__ + ".request", default=None
 )
 
 _cv_ctx: contextvars.ContextVar[ScraperCtxData | None] = contextvars.ContextVar(
@@ -38,10 +38,10 @@ ctx = CtxProxy()
 
 class ScraperCtx:
     def __init__(self, **kwargs: Any) -> None:
-        builder = _cv_builder.get()
-        if builder is not None:
-            _cv_builder.reset(builder.token_ctx)
-        self.data = ScraperCtxData(**kwargs | {"builder": builder})
+        request = _cv_request.get()
+        if request is not None:
+            _cv_request.reset(request.token_ctx)
+        self.data = ScraperCtxData(**kwargs | {"request": request})
         self.token: contextvars.Token[Any] | None = None
 
     def __enter__(self) -> ScraperCtxData:

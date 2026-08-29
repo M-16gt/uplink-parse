@@ -25,7 +25,7 @@ class FuncMeta:
 class _ParseMeta:
     funcs: list[FuncMeta] = attrs.field(factory=list)
 
-    def is_nan_obj(self) -> bool:
+    def is_empty(self) -> bool:
         return not self.funcs
 
     @classmethod
@@ -63,10 +63,10 @@ class _ParseMeta:
 @attrs.define(slots=False)
 class ScraperCtxData:
     response: Any | None = None
-    request: Any | None = None
+    response_raw: Any | None = None
     consumer: Any | None = None
     scraper: Any | None = None
-    builder: Any | None = None
+    request: Any | None = None
 
 
 @attrs.define(slots=False)

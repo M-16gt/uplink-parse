@@ -16,7 +16,7 @@ class BaseProcessor(ProcessorGeneric[input_rt_func, dict[str, Any]]):
 
         target_meta = owner.storage.parse_funcs_meta[cls]
 
-        if not target_meta.is_nan_obj():
+        if not target_meta.is_empty():
             return cls._populate_target(
                 await owner.storage.task_runner(target_meta.funcs), target
             )

@@ -39,6 +39,7 @@ class _ParseObj(ParseGeneric[strategy, strategy_rt]):
     scraper: Self
     response: strategy_rt
     consumer: Any
+    response_raw: Any
     request: Any
 
     def __getattr__(self, item: str) -> Any:
@@ -71,7 +72,7 @@ class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
             response=args[-1],
             consumer=args[0] if len(args) > 1 else None,
             scraper=self,
-            request=args[-1],
+            response_raw=args[-1],
         ):
             if self.use_parse_response():
                 ctx.response = await self.parse_response()
@@ -88,12 +89,12 @@ class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
 
     async def parse_response(self, **strategy_params: Any) -> Any:
         return await get_instance(self.config_types["strategy"])(
-            ctx.request, **strategy_params
+            ctx.response_raw, **strategy_params
         )
 
     @staticmethod
     def use_parse_response() -> bool:
-        return bool(getattr(ctx.request, "status_code", None))
+        return bool(getattr(ctx.response_raw, "status_code", None))
 
 
 class TextParse(BaseParse[TextStrategy, TextResult]): ...
