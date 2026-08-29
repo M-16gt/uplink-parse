@@ -62,7 +62,7 @@ class TaskRunner:
 
             if pre_res is True:
                 await func_meta.strategy(
-                    func_meta.coroutine_or_func,
+                    func_meta.func,
                     result_list,
                     self.batch_size,
                     self.use_thread_for_sync,

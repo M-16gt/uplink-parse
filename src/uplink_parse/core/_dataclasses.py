@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Awaitable, Callable
+from collections.abc import Callable
 from typing import TYPE_CHECKING, Any
 
 import attrs
@@ -12,42 +12,26 @@ if TYPE_CHECKING:
     from uplink_parse.core.tasks.task_runner import TaskRunner
 
 
-@attrs.define
+@attrs.frozen
 class FuncMeta:
     name: str
-    url: Callable[..., Any]
-    coroutine_or_func: Callable[..., Any] | Awaitable[Any]
+    func: Callable[..., Any]
     strategy: Callable[..., Any]
     hooks: HookSpec = attrs.field(factory=HookSpec)
 
 
-@attrs.define
-class _ParseMeta:
+@attrs.frozen
+class FuncsMeta:
     funcs: list[FuncMeta] = attrs.field(factory=list)
 
-    def is_empty(self) -> bool:
-        return not self.funcs
-
     @classmethod
-    def build_all(
-        cls,
-        owner: Any,
-        **kwargs: Any,
-    ) -> dict[type[Any], _ParseMeta]:
-
-        return {
-            processor_cls: cls.from_extractors(processor_cls, owner, **kwargs)
-            for processor_cls in owner.parse_fields
-        }
-
-    @classmethod
-    def from_extractors(
+    def build(
         cls,
         base: type,
         owner: type | None = None,
         extractors: Any | None = None,
         **kwargs: Any,
-    ) -> _ParseMeta:
+    ) -> FuncsMeta:
         if extractors is None:
             from uplink_parse.core.extractors import ExtractorChain
 
@@ -57,6 +41,30 @@ class _ParseMeta:
                 extractors.run(owner, base, **kwargs),
                 FuncMeta,
             )
+        )
+
+    def is_empty(self) -> bool:
+        return not self.funcs
+
+
+@attrs.define
+class _ParseMeta:
+    funcs: dict[type, FuncsMeta] = attrs.field(factory=dict)
+
+    def is_empty(self) -> bool:
+        return not self.funcs
+
+    @classmethod
+    def build(
+        cls,
+        owner: Any,
+        **kwargs: Any,
+    ) -> _ParseMeta:
+        return cls(
+            {
+                processor_cls: FuncsMeta.build(processor_cls, owner, **kwargs)
+                for processor_cls in owner.parse_fields
+            }
         )
 
 
@@ -71,6 +79,6 @@ class ScraperCtxData:
 
 @attrs.define(slots=False)
 class Storage:
-    parse_funcs_meta: dict[type, _ParseMeta]
+    parse_funcs_meta: _ParseMeta
     task_runner: TaskRunner
     strategy_params: dict[str, Any] = attrs.field(factory=dict)

@@ -1,4 +1,3 @@
-import asyncio
 import re
 import time
 from collections.abc import Callable, Coroutine

@@ -56,7 +56,7 @@ class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
         strategy_params: dict[str, Any] | None = None,
     ) -> Any:
         instance = super().__new__(cls)
-        parse_funcs_meta = _ParseMeta.build_all(instance)
+        parse_funcs_meta = _ParseMeta.build(instance)
         task_runner = TaskRunner()
         instance.storage = Storage(
             parse_funcs_meta=parse_funcs_meta,

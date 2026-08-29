@@ -1,4 +1,3 @@
-# src/uplink_parse/core/_strategies.py
 import asyncio
 
 import aiohttp
@@ -6,7 +5,6 @@ import uplink
 
 from uplink_parse.core.strategies.parsel import ParselResult, ParselStrategy
 
-# ... существующие импорты ...
 from uplink_parse.core.parse import BaseParse
 from uplink_parse.decorators.field import field
 
@@ -35,20 +33,14 @@ class Quotes(uplink.Consumer):
         pass
 
 
-# client = Quotes(
-#             base_url="https://quotes.toscrape.com"
-#         )
-# print(client.base())
 async def main():
-    import cProfile
 
-    # Создаем сессию явно, чтобы управлять её жизненным циклом
     async with aiohttp.ClientSession() as session:
         client = Quotes(
             base_url="https://quotes.toscrape.com",
             client=uplink.clients.AiohttpClient(session=session),
         )
-        tasks = [client.base() for i in range(100)]
+        tasks = [client.base() for _ in range(100)]
         import time
 
         start = time.time()

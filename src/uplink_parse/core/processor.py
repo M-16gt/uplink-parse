@@ -14,7 +14,7 @@ class BaseProcessor(ProcessorGeneric[input_rt_func, dict[str, Any]]):
     @classmethod
     async def process(cls, owner: Any, target: dict[str, Any]) -> dict[str, Any]:
 
-        target_meta = owner.storage.parse_funcs_meta[cls]
+        target_meta = owner.storage.parse_funcs_meta.funcs[cls]
 
         if not target_meta.is_empty():
             return cls._populate_target(
@@ -37,7 +37,7 @@ async def extract_all(
     await asyncio.gather(
         *[
             proc_cls.process(owner, target)
-            for proc_cls in owner.storage.parse_funcs_meta
+            for proc_cls in owner.storage.parse_funcs_meta.funcs
         ]
     )
     return target

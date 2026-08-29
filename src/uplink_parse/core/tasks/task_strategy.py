@@ -1,16 +1,21 @@
 from __future__ import annotations
 
 import asyncio
-import inspect
 from typing import Any
 
 from uplink_parse.core.exceptions import StrategyNotFoundError
+from uplink_parse.core.tasks.compat import (
+    await_or_return,
+    isasyncgenfunction,
+    iscoroutinefunction,
+    isgeneratorfunction,
+)
 from uplink_parse.core.utils import to_list
 from uplink_parse.core.utils.singleton import get_instance
 
 
 class BaseTaskStrategy:
-    __slots__ = ()
+    slots = ()
 
     @staticmethod
     def _flush_batch(lst: list[Any], batch: list[Any]) -> None:
@@ -28,7 +33,7 @@ class BaseTaskStrategy:
         raise NotImplementedError
 
     async def __call__(
-        self, target: Any, lst: list[Any], batch_size: int, ut: bool
+        self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
         raise NotImplementedError
 
@@ -47,10 +52,10 @@ class BaseTaskStrategy:
 class _FuncAsyncGenStrategy(BaseTaskStrategy):
     @staticmethod
     def is_supported(target: Any) -> bool:
-        return inspect.isasyncgenfunction(target)
+        return isasyncgenfunction(target)
 
     async def __call__(
-        self, target: Any, lst: list[Any], batch_size: int, ut: bool
+        self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
         gen = target()
         batch = []
@@ -65,32 +70,30 @@ class _FuncAsyncGenStrategy(BaseTaskStrategy):
 class _FuncSyncGenStrategy(BaseTaskStrategy):
     @staticmethod
     def is_supported(target: Any) -> bool:
-        return inspect.isgeneratorfunction(target)
+        return isgeneratorfunction(target)
 
     async def __call__(
-        self, target: Any, lst: list[Any], batch_size: int, ut: bool
+        self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
-        data = await asyncio.to_thread(lambda: list(target())) if ut else list(target())
+        data = (
+            await asyncio.to_thread(lambda: list(target()))
+            if use_thread
+            else list(target())
+        )
         self._flush_batch(lst, data)
 
 
-class _CoroStrategy(BaseTaskStrategy):
-    @staticmethod
-    def is_supported(target: Any) -> bool:
-        return inspect.iscoroutine(target)
-
-    async def __call__(
-        self, target: Any, lst: list[Any], batch_size: int, ut: bool
-    ) -> None:
-        self._flush_batch(lst, [await target])
-
-
-class _FuncSyncStrategy(BaseTaskStrategy):
+class _CallableStrategy(BaseTaskStrategy):
     @staticmethod
     def is_supported(target: Any) -> bool:
         return callable(target)
 
     async def __call__(
-        self, target: Any, lst: list[Any], batch_size: int, ut: bool
+        self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
-        self._flush_batch(lst, [await asyncio.to_thread(target) if ut else target()])
+        if use_thread and not iscoroutinefunction(target):
+            result = await asyncio.to_thread(target)
+        else:
+            result = target()
+        result = await await_or_return(result)
+        self._flush_batch(lst, [result])

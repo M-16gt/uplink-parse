@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import functools
 import inspect
-from typing import Any, Callable, Coroutine
+from typing import Any
 
 try:
     import nest_asyncio
@@ -11,6 +11,31 @@ try:
     _NEST_ASYNCIO = True
 except ImportError:
     _NEST_ASYNCIO = False
+
+
+_CO_GENERATOR = inspect.CO_GENERATOR
+_CO_COROUTINE = inspect.CO_COROUTINE
+_CO_ASYNC_GENERATOR = inspect.CO_ASYNC_GENERATOR
+
+
+def _code_flags(func: Any) -> int:
+    func = getattr(func, "func", func)
+    while isinstance(func, functools.partial):
+        func = func.func
+    code = getattr(func, "code", None)
+    return code.co_flags if code is not None else 0
+
+
+def iscoroutinefunction(func: Any) -> bool:
+    return bool(_code_flags(func) & _CO_COROUTINE)
+
+
+def isasyncgenfunction(func: Any) -> bool:
+    return bool(_code_flags(func) & _CO_ASYNC_GENERATOR)
+
+
+def isgeneratorfunction(func: Any) -> bool:
+    return bool(_code_flags(func) & _CO_GENERATOR)
 
 
 def async_to_sync(async_func: Any) -> Any:
@@ -45,7 +70,3 @@ async def await_or_return(obj: Any) -> Any:
     if hasattr(obj, "__await__"):
         return await obj
     return obj
-
-
-def to_runnable(*funcs: Any) -> list[Coroutine[Any, Any, Any] | Callable[..., Any]]:
-    return [func() if inspect.iscoroutinefunction(func) else func for func in funcs]
