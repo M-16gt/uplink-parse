@@ -14,7 +14,9 @@ class Parseable:
         for name, value in cls.__dict__.items():
             if name.startswith("__") and name.endswith("__"):
                 continue
-            proc_cls = getattr(value, Markers.PROCESSOR_CLASS, None)
+            proc_cls = getattr(value, Markers.META, {}).get(
+                Markers.PROCESSOR_CLASS, None
+            )
             if proc_cls is not None:
                 _fields.setdefault(proc_cls, set()).add(name)
         setattr(cls, Markers.PARSE_FIELDS, _fields)

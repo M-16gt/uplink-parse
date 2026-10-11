@@ -5,7 +5,7 @@ from typing import Any
 
 import attrs
 
-from uplink_parse.core.utils.markers import Markers
+from uplink_parse.core.utils.markers import Markers, check_meta_in_func
 
 __all__ = ["SKIP", "HookSpec", "prehook", "posthook", "errorhook"]
 
@@ -46,10 +46,11 @@ class HookSpec:
 
 def _register(point: str, *funcs: Callable[..., Any]) -> Callable[..., Any]:
     def deco(target: Callable[..., Any]) -> Callable[..., Any]:
-        spec = getattr(target, Markers.HOOKS, None)
+        check_meta_in_func(target)
+        spec = getattr(target, Markers.META).get(Markers.HOOKS, None)
         if spec is None:
             spec = HookSpec()
-            setattr(target, Markers.HOOKS, spec)
+            getattr(target, Markers.META)[Markers.HOOKS] = spec
         getattr(spec, point).extend(funcs)
         return target
 

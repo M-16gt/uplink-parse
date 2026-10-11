@@ -19,7 +19,9 @@ class ExtractorChain:
     def extract_hooks(
         owner: Any, base: Any, acc: dict[str, Any], kwargs: dict[str, Any]
     ) -> list[HookSpec]:
-        return [getattr(f, Markers.HOOKS, HookSpec()) for f in acc["func"]]
+        return [
+            getattr(f, Markers.META).get(Markers.HOOKS, HookSpec()) for f in acc["func"]
+        ]
 
     @staticmethod
     def extract_name(

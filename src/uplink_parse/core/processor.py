@@ -3,12 +3,13 @@ from typing import Any
 
 from uplink_parse.core._generics import ProcessorGeneric, input_rt_func
 from uplink_parse.core.utils import to_dict
-from uplink_parse.core.utils.markers import Markers
+from uplink_parse.core.utils.markers import Markers, check_meta_in_func
 
 
 class BaseProcessor(ProcessorGeneric[input_rt_func, dict[str, Any]]):
     def __call__(self, func: Any) -> Any:
-        setattr(func, Markers.PROCESSOR_CLASS, self.__class__)
+        check_meta_in_func(func)
+        getattr(func, Markers.META)[Markers.PROCESSOR_CLASS] = self.__class__
         return func
 
     @classmethod
