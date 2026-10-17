@@ -3,9 +3,9 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-from uplink_parse.core._dataclasses import HookSpec, get_func_meta
+from uplink_parse.core._dataclasses import HookPoint, HookSpec, meta_decorator
 
-__all__ = ["SKIP", "HookSpec", "prehook", "posthook", "errorhook"]
+__all__ = ["SKIP", "HookPoint", "HookSpec", "prehook", "posthook", "errorhook"]
 
 
 class _SkipType:
@@ -25,12 +25,8 @@ class _SkipType:
 SKIP = _SkipType()
 
 
-def _register(point: str, *funcs: Callable[..., Any]) -> Callable[..., Any]:
-    def deco(target: Callable[..., Any]) -> Callable[..., Any]:
-        getattr(get_func_meta(target).hooks, point).extend(funcs)
-        return target
-
-    return deco
+def _register(point: HookPoint, *funcs: Callable[..., Any]) -> Callable[..., Any]:
+    return meta_decorator(lambda meta: meta.hooks.of(point).extend(funcs))
 
 
 def prehook(*funcs: Callable[..., Any]) -> Callable[..., Any]:
@@ -39,15 +35,15 @@ def prehook(*funcs: Callable[..., Any]) -> Callable[..., Any]:
     True — идём вызывать функцию поля как обычно.
     Any (иное) — это и есть финальный результат поля, сама функция не зовётся.
     """
-    return _register("pre", *funcs)
+    return _register(HookPoint.PRE, *funcs)
 
 
 def posthook(*funcs: Callable[..., Any]) -> Callable[..., Any]:
     """h(value) -> SKIP | Any. Прогоняется по каждому элементу результата поля."""
-    return _register("post", *funcs)
+    return _register(HookPoint.POST, *funcs)
 
 
 def errorhook(*funcs: Callable[..., Any]) -> Callable[..., Any]:
     """h(exc, func_meta) -> Any | raise. Первый хук, не бросивший исключение,
     определяет результат (или SKIP, чтобы проглотить ошибку без значения)."""
-    return _register("error", *funcs)
+    return _register(HookPoint.ERROR, *funcs)

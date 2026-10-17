@@ -51,12 +51,10 @@ class TaskRunner:
         result_list: list[Any],
         skipped_func: set[FuncMeta],
     ) -> None:
-        merged_pre = self.hooks.pre + func_meta.hooks.pre
-        merged_post = self.hooks.post + func_meta.hooks.post
-        merged_error = self.hooks.error + func_meta.hooks.error
+        hooks = self.hooks + func_meta.hooks
 
         try:
-            pre_res = await self._run_pre(func_meta, merged_pre)
+            pre_res = await self._run_pre(func_meta, hooks.pre)
             if pre_res is SKIP:
                 skipped_func.add(func_meta)
                 return
@@ -71,9 +69,9 @@ class TaskRunner:
             else:
                 BaseTaskStrategy._flush_batch(result_list, [pre_res])
 
-            self._run_post(merged_post, result_list)
+            self._run_post(hooks.post, result_list)
         except Exception as exc:
-            handled, value = await self._run_error(merged_error, func_meta, exc)
+            handled, value = await self._run_error(hooks.error, func_meta, exc)
             if not handled:
                 self.on_error(exc, func_meta, result_list)
             elif value is not SKIP:

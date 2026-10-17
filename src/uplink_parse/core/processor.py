@@ -2,7 +2,7 @@ import asyncio
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from uplink_parse.core._dataclasses import PopulateFunc, get_func_meta
+from uplink_parse.core._dataclasses import FuncMeta, PopulateFunc, meta_decorator
 from uplink_parse.core.tasks.task_strategy import BaseTaskStrategy
 from uplink_parse.core.utils import to_dict
 
@@ -20,13 +20,11 @@ def processor(populate: PopulateFunc) -> Callable[[F], F]:
         field = processor(lambda result, target: target | result)
     """
 
-    def decorator(func: F) -> F:
-        meta = get_func_meta(func)
+    def update(meta: FuncMeta) -> None:
         meta.populate = populate
-        meta.strategy = BaseTaskStrategy.get_strategy(func)
-        return func
+        meta.strategy = BaseTaskStrategy.get_strategy(meta.func)
 
-    return decorator
+    return meta_decorator(update)
 
 
 async def extract_all(

@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import copy
 from collections.abc import Callable
+from enum import Enum
 from types import MethodType
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, TypeVar
 
 import attrs
 
@@ -17,21 +18,28 @@ if TYPE_CHECKING:
 PopulateFunc = Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]
 
 
+class HookPoint(str, Enum):
+    """Точки, куда можно повесить хук. Значение = имя поля в ``HookSpec``."""
+
+    PRE = "pre"
+    POST = "post"
+    ERROR = "error"
+
+
 @attrs.define
 class HookSpec:
     pre: list[Callable[..., Any]] = attrs.field(factory=list)
     post: list[Callable[..., Any]] = attrs.field(factory=list)
     error: list[Callable[..., Any]] = attrs.field(factory=list)
 
+    def of(self, point: HookPoint) -> list[Callable[..., Any]]:
+        return getattr(self, point.value)  # type: ignore[no-any-return]
+
     def is_empty(self) -> bool:
-        return not (self.pre or self.post or self.error)
+        return not any(self.of(p) for p in HookPoint)
 
     def __add__(self, other: HookSpec) -> HookSpec:
-        return HookSpec(
-            pre=self.pre + other.pre,
-            post=self.post + other.post,
-            error=self.error + other.error,
-        )
+        return HookSpec(**{p.value: self.of(p) + other.of(p) for p in HookPoint})
 
 
 @attrs.define(eq=False)
@@ -52,6 +60,8 @@ class FuncMeta:
     hooks: HookSpec = attrs.field(factory=HookSpec)
 
 
+F = TypeVar("F", bound=Callable[..., Any])
+
 #: Поля парсера, сгруппированные по ``populate``.
 ParseMeta = dict[PopulateFunc, list[FuncMeta]]
 
@@ -63,6 +73,17 @@ def get_func_meta(func: Any) -> FuncMeta:
         meta = FuncMeta(func=func)
         setattr(func, Markers.META, meta)
     return meta
+
+
+def meta_decorator(update: Callable[[FuncMeta], None]) -> Callable[[F], F]:
+    """Декоратор, который что-то дописывает в ``FuncMeta`` функции и возвращает
+    её же. Единая основа для ``processor``, ``prehook`` и будущих расширений."""
+
+    def decorator(func: F) -> F:
+        update(get_func_meta(func))
+        return func
+
+    return decorator
 
 
 def build_parse_meta(owner: Any) -> ParseMeta:
