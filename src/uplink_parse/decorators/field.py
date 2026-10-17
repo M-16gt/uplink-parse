@@ -1,18 +1,13 @@
 from typing import Any
 
-from uplink_parse.core.processor import BaseProcessor
-from uplink_parse.core.utils.singleton import get_instance
+from uplink_parse.core.processor import processor
 
 __all__ = ["field"]
 
 
-class _Field(BaseProcessor[Any]):
-    @staticmethod
-    def _populate_target(
-        result: dict[str, Any], target: dict[str, Any]
-    ) -> dict[str, Any]:
-        target.update(result)
-        return target
+def _populate(result: dict[str, Any], target: dict[str, Any]) -> dict[str, Any]:
+    target.update(result)
+    return target
 
 
-field = get_instance(_Field)
+field = processor(_populate)

@@ -1,84 +1,80 @@
 from __future__ import annotations
 
+import copy
 from collections.abc import Callable
+from types import MethodType
 from typing import TYPE_CHECKING, Any
 
 import attrs
 
-from uplink_parse.core.hooks import HookSpec
-from uplink_parse.core.utils import transpose_dict_to_dataclass
+from uplink_parse.core.utils.markers import Markers
 
 if TYPE_CHECKING:
     from uplink_parse.core.tasks.task_runner import TaskRunner
 
+#: ``populate(result, target) -> target`` — как влить результат группы полей
+#: (``{имя_поля: значение}``) в итоговый словарь.
+PopulateFunc = Callable[[dict[str, Any], dict[str, Any]], dict[str, Any]]
 
-class _SizedMeta:
-    __slots__ = ()
 
-    def __len__(self) -> int:
-        raise NotImplementedError
-
-    def __bool__(self) -> bool:
-        return bool(len(self))
+@attrs.define
+class HookSpec:
+    pre: list[Callable[..., Any]] = attrs.field(factory=list)
+    post: list[Callable[..., Any]] = attrs.field(factory=list)
+    error: list[Callable[..., Any]] = attrs.field(factory=list)
 
     def is_empty(self) -> bool:
-        return not self
+        return not (self.pre or self.post or self.error)
+
+    def __add__(self, other: HookSpec) -> HookSpec:
+        return HookSpec(
+            pre=self.pre + other.pre,
+            post=self.post + other.post,
+            error=self.error + other.error,
+        )
 
 
-@attrs.frozen
+@attrs.define(eq=False)
 class FuncMeta:
-    name: str
+    """Всё, что известно о поле парсера.
+
+    Создаётся декораторами прямо на функции (``func.__parse_meta__``) и
+    заполняется по мере применения декораторов, ``name`` дописывает
+    ``Parseable.__init_subclass__``. Этот объект общий для всех экземпляров
+    класса, поэтому ``func`` в нём — обычная функция; в ``BaseParse.__new__``
+    для каждого экземпляра делается копия, где ``func`` привязан к нему.
+    """
+
     func: Callable[..., Any]
-    strategy: Callable[..., Any]
+    name: str = ""
+    populate: PopulateFunc | None = None
+    strategy: Any = None
     hooks: HookSpec = attrs.field(factory=HookSpec)
 
 
-@attrs.frozen
-class FuncsMeta(_SizedMeta):
-    funcs: list[FuncMeta] = attrs.field(factory=list)
-
-    def __len__(self) -> int:
-        return len(self.funcs)
-
-    @classmethod
-    def build(
-        cls,
-        base: type,
-        owner: type | None = None,
-        extractors: Any | None = None,
-        **kwargs: Any,
-    ) -> FuncsMeta:
-        if extractors is None:
-            from uplink_parse.core.extractors import ExtractorChain
-
-            extractors = ExtractorChain()
-        return cls(
-            funcs=transpose_dict_to_dataclass(
-                extractors.run(owner, base, **kwargs),
-                FuncMeta,
-            )
-        )
+#: Поля парсера, сгруппированные по ``populate``.
+ParseMeta = dict[PopulateFunc, list[FuncMeta]]
 
 
-@attrs.frozen
-class _ParseMeta(_SizedMeta):
-    by_processor: dict[type, FuncsMeta] = attrs.field(factory=dict)
+def get_func_meta(func: Any) -> FuncMeta:
+    """Вернуть ``FuncMeta`` функции, создав её при первом обращении."""
+    meta = getattr(func, Markers.META, None)
+    if meta is None:
+        meta = FuncMeta(func=func)
+        setattr(func, Markers.META, meta)
+    return meta
 
-    def __len__(self) -> int:
-        return len(self.by_processor)
 
-    @classmethod
-    def build(
-        cls,
-        owner: Any,
-        **kwargs: Any,
-    ) -> _ParseMeta:
-        return cls(
-            {
-                processor_cls: FuncsMeta.build(processor_cls, owner, **kwargs)
-                for processor_cls in owner.parse_fields
-            }
-        )
+def build_parse_meta(owner: Any) -> ParseMeta:
+    """Поля ``owner`` для конкретного экземпляра: у каждого ``func`` привязан
+    к ``owner`` (на копии, общие меты класса не трогаем), группировка по
+    ``populate``."""
+    groups: ParseMeta = {}
+    for meta in owner.parse_fields:
+        local = copy.copy(meta)
+        local.func = MethodType(meta.func, owner)
+        groups.setdefault(local.populate, []).append(local)
+    return groups
 
 
 @attrs.define(slots=False)
@@ -92,6 +88,5 @@ class ScraperCtxData:
 
 @attrs.define(slots=False)
 class Storage:
-    parse_funcs_meta: _ParseMeta
+    parse_funcs_meta: ParseMeta
     task_runner: TaskRunner
-    strategy_params: dict[str, Any] = attrs.field(factory=dict)

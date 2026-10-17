@@ -3,9 +3,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any
 
-import attrs
-
-from uplink_parse.core.utils.markers import Markers, check_meta_in_func
+from uplink_parse.core._dataclasses import HookSpec, get_func_meta
 
 __all__ = ["SKIP", "HookSpec", "prehook", "posthook", "errorhook"]
 
@@ -27,31 +25,9 @@ class _SkipType:
 SKIP = _SkipType()
 
 
-@attrs.define
-class HookSpec:
-    pre: list[Callable[..., Any]] = attrs.field(factory=list)
-    post: list[Callable[..., Any]] = attrs.field(factory=list)
-    error: list[Callable[..., Any]] = attrs.field(factory=list)
-
-    def is_empty(self) -> bool:
-        return not (self.pre or self.post or self.error)
-
-    def __add__(self, other: HookSpec) -> HookSpec:
-        return HookSpec(
-            pre=self.pre + other.pre,
-            post=self.post + other.post,
-            error=self.error + other.error,
-        )
-
-
 def _register(point: str, *funcs: Callable[..., Any]) -> Callable[..., Any]:
     def deco(target: Callable[..., Any]) -> Callable[..., Any]:
-        check_meta_in_func(target)
-        spec = getattr(target, Markers.META).get(Markers.HOOKS, None)
-        if spec is None:
-            spec = HookSpec()
-            getattr(target, Markers.META)[Markers.HOOKS] = spec
-        getattr(spec, point).extend(funcs)
+        getattr(get_func_meta(target).hooks, point).extend(funcs)
         return target
 
     return deco

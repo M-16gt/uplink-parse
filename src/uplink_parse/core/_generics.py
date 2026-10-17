@@ -1,4 +1,4 @@
-from typing import Generic, TypeVar
+from typing import Generic, Literal, TypeVar
 
 from uplink_parse.core.generic_base import GenericBase
 
@@ -9,15 +9,9 @@ strategy_rt = TypeVar("strategy_rt")
 class ParseGeneric(GenericBase, Generic[strategy, strategy_rt]): ...
 
 
-input_rt_func = TypeVar("input_rt_func")
-output_rt_func = TypeVar("output_rt_func")
-
-
-class ProcessorGeneric(GenericBase, Generic[input_rt_func, output_rt_func]): ...
-
-
 output_data_from_func = TypeVar("output_data_from_func")
 attr_name = TypeVar("attr_name")
 
 
-class StrategyGeneric(GenericBase, Generic[output_data_from_func, attr_name]): ...
+class StrategyGeneric(GenericBase, Generic[output_data_from_func, attr_name]):
+    config_checks = {"attr_name": (Literal,)}

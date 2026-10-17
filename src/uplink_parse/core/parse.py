@@ -2,9 +2,15 @@ from __future__ import annotations
 
 import asyncio
 import functools
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from typing_extensions import Self
+if TYPE_CHECKING:
+    from typing_extensions import Self
+else:
+    try:
+        from typing import Self
+    except ImportError:  # Python 3.10
+        from typing_extensions import Self
 
 from uplink_parse.core.parseable import Parseable
 from uplink_parse.core.utils import to_dict
@@ -18,7 +24,7 @@ except ImportError:
         return handler
 
 
-from uplink_parse.core._dataclasses import Storage, _ParseMeta
+from uplink_parse.core._dataclasses import Storage, build_parse_meta
 from uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
 from uplink_parse.core.processor import extract_all
 from uplink_parse.core.strategies import (
@@ -26,6 +32,7 @@ from uplink_parse.core.strategies import (
     BytesStrategy,
     JSONResult,
     JSONStrategy,
+    Strategy,
     TextResult,
     TextStrategy,
     XMLResult,
@@ -36,6 +43,8 @@ from uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 
 class _ParseObj(ParseGeneric[strategy, strategy_rt]):
+    config_checks = {"strategy": (Strategy,)}
+
     scraper: Self
     response: strategy_rt
     consumer: Any
@@ -56,11 +65,9 @@ class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
         strategy_params: dict[str, Any] | None = None,
     ) -> Any:
         instance = super().__new__(cls)
-        parse_funcs_meta = _ParseMeta.build(instance)
-        task_runner = TaskRunner()
         instance.storage = Storage(
-            parse_funcs_meta=parse_funcs_meta,
-            task_runner=task_runner,
+            parse_funcs_meta=build_parse_meta(instance),
+            task_runner=TaskRunner(),
         )
         instance.parse_response = functools.partial(  # type: ignore[method-assign]
             instance.parse_response, **to_dict(strategy_params)

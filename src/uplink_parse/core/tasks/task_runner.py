@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from typing import Any, ClassVar
+from typing import Any
 
 from uplink_parse.core._dataclasses import FuncMeta
 from uplink_parse.core.hooks import SKIP, HookSpec
@@ -12,8 +12,6 @@ from uplink_parse.core.tasks.task_strategy import BaseTaskStrategy
 
 class TaskRunner:
     __slots__ = ("batch_size", "use_thread_for_sync", "on_error", "hooks")
-
-    default_hooks: ClassVar[HookSpec] = HookSpec()
 
     def __init__(
         self,
@@ -25,7 +23,7 @@ class TaskRunner:
         self.batch_size = batch_size
         self.use_thread_for_sync = use_thread_for_sync
         self.on_error = on_error or self._default_on_error
-        self.hooks = hooks if hooks is not None else type(self).default_hooks
+        self.hooks = hooks if hooks is not None else HookSpec()
 
     @staticmethod
     def _default_on_error(
@@ -38,7 +36,7 @@ class TaskRunner:
             return {}
 
         results: list[list[Any]] = [[] for _ in funcs]
-        skipped_func: list[Any] = []
+        skipped_func: set[FuncMeta] = set()
         tasks = [
             asyncio.create_task(self._run_single(func_meta, results[i], skipped_func))
             for i, func_meta in enumerate(funcs)
@@ -48,7 +46,10 @@ class TaskRunner:
         return self._unwrap_results(funcs, results, skipped_func)
 
     async def _run_single(
-        self, func_meta: FuncMeta, result_list: list[Any], skipped_func: list[Any]
+        self,
+        func_meta: FuncMeta,
+        result_list: list[Any],
+        skipped_func: set[FuncMeta],
     ) -> None:
         merged_pre = self.hooks.pre + func_meta.hooks.pre
         merged_post = self.hooks.post + func_meta.hooks.post
@@ -57,7 +58,7 @@ class TaskRunner:
         try:
             pre_res = await self._run_pre(func_meta, merged_pre)
             if pre_res is SKIP:
-                skipped_func.append(func_meta)
+                skipped_func.add(func_meta)
                 return
 
             if pre_res is True:
@@ -119,7 +120,7 @@ class TaskRunner:
 
     @staticmethod
     def _unwrap_results(
-        funcs: list[FuncMeta], results: list[list[Any]], skipped_func: list[Any]
+        funcs: list[FuncMeta], results: list[list[Any]], skipped_func: set[FuncMeta]
     ) -> dict[str, Any]:
         target: dict[str, Any] = {}
         for func_meta, result in zip(funcs, results, strict=False):

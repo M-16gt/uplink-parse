@@ -72,6 +72,15 @@ class NoActiveContextError(ContextError):
 
 
 # --------------------------------------------------------------------------- #
+# generic_base.py — проверка типовых параметров при определении класса
+# --------------------------------------------------------------------------- #
+
+
+class GenericConfigError(UplinkParseError, TypeError):
+    pass
+
+
+# --------------------------------------------------------------------------- #
 # strategy.py — стратегии преобразования ответа
 # --------------------------------------------------------------------------- #
 
@@ -98,17 +107,4 @@ class TaskStrategyError(UplinkParseError):
 
 
 class StrategyNotFoundError(TaskStrategyError):
-    pass
-
-
-# --------------------------------------------------------------------------- #
-# processor.py — извлечение данных
-# --------------------------------------------------------------------------- #
-
-
-class ProcessorError(UplinkParseError):
-    pass
-
-
-class ProcessorCacheError(ProcessorError):
     pass
