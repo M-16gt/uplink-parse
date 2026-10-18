@@ -10,6 +10,7 @@ __all__ = ["GenericBase"]
 
 class GenericBase:
     config_types: types.MappingProxyType[str, Any]
+    _check_typevars: tuple[str, ...] = ()
 
     def __init_subclass__(
         cls,
@@ -37,18 +38,19 @@ class GenericBase:
                     }
                 )
 
+        config = dict(getattr(cls, "config_types", {}))
+        config.update(own_config)
+
         unresolved = [
             name
-            for name in check_typevars
-            if name not in own_config or isinstance(own_config[name], TypeVar)
+            for name in cls._check_typevars
+            if name not in config or isinstance(config[name], TypeVar)
         ]
-
         if unresolved:
             raise GenericConfigError(
                 f"{cls.__name__} must explicitly define type variables: "
                 f"{', '.join(unresolved)}"
             )
 
-        config = dict(getattr(cls, "config_types", {}))
-        config.update(own_config)
+        cls._check_typevars += check_typevars
         cls.config_types = types.MappingProxyType(config)

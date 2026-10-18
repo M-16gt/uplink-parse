@@ -55,7 +55,9 @@ class _ParseObj(ParseGeneric[strategy, strategy_rt]):
         return getattr(ctx, item)
 
 
-class BaseParse(Parseable, _ParseObj[strategy, strategy_rt]):
+class BaseParse(
+    Parseable, _ParseObj[strategy, strategy_rt], check_typevars=("strategy",)
+):
     storage: Storage
 
     def __new__(

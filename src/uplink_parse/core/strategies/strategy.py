@@ -12,7 +12,9 @@ from uplink_parse.core.strategies.accessor import ResponseAccessor
 from uplink_parse.core.tasks.compat import await_or_return
 
 
-class Strategy(StrategyGeneric[output_data_from_func, attr_name]):
+class Strategy(
+    StrategyGeneric[output_data_from_func, attr_name], check_typevars=("attr_name",)
+):
     __slots__ = ()
 
     async def __call__(self, response: Any, **params: Any) -> output_data_from_func:
