@@ -18,18 +18,20 @@ class Strategy(
     __slots__ = ()
 
     async def __call__(self, response: Any, **params: Any) -> output_data_from_func:
-        attrs = get_args(self.config_types["attr_name"])
         try:
-            return self.transform(
-                await await_or_return(ResponseAccessor.get_any(response, *attrs)),
-                **params,
-            )
+            raw = await self.read_response(response, **params)
+            return self.transform(raw, **params)
         except Exception as exc:
             raise ResponseParsingError(
                 f"Failed to parse response: {exc}",
                 details={"strategy": self.__class__.__name__},
                 source=self.__class__.__name__,
             ) from exc
+
+    # Можно переопределять в случае нужды в подклассса Strategy
+    async def read_response(self, response: Any, **params: Any) -> Any:
+        attrs = get_args(self.config_types["attr_name"])
+        return await await_or_return(ResponseAccessor.get_any(response, *attrs))
 
     def transform(self, raw: Any, **params: Any) -> output_data_from_func:
         return cast(output_data_from_func, raw)
