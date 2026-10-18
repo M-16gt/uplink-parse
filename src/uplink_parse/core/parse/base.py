@@ -27,17 +27,7 @@ except ImportError:
 from uplink_parse.core._dataclasses import Storage, build_parse_meta
 from uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
 from uplink_parse.core.processor import extract_all
-from uplink_parse.core.strategies import (
-    BytesResult,
-    BytesStrategy,
-    JSONResult,
-    JSONStrategy,
-    Strategy,
-    TextResult,
-    TextStrategy,
-    XMLResult,
-    XMLStrategy,
-)
+from uplink_parse.core.strategies.strategy import Strategy
 from uplink_parse.core.tasks.task_runner import TaskRunner
 from uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
@@ -104,18 +94,6 @@ class BaseParse(
     @staticmethod
     def use_parse_response() -> bool:
         return bool(getattr(ctx.response_raw, "status_code", None))
-
-
-class TextParse(BaseParse[TextStrategy, TextResult]): ...
-
-
-class XMLParse(BaseParse[XMLStrategy, XMLResult]): ...
-
-
-class JSONParse(BaseParse[JSONStrategy, JSONResult]): ...
-
-
-class BytesParse(BaseParse[BytesStrategy, BytesResult]): ...
 
 
 def parse(cls: BaseParse[Any, Any]) -> Any:

@@ -5,11 +5,11 @@ import uplink
 
 from uplink_parse.core.strategies.parsel import ParselResult, ParselStrategy
 
-from uplink_parse.core.parse import BaseParse
+from uplink_parse.core.parse.parsel import ParselParse
 from uplink_parse.decorators.field import field
 
 
-class ParselParse(BaseParse[ParselStrategy, ParselResult]):
+class MyParse(ParselParse):
     @field
     async def data(self):
         for quote in self.response.css("div.quote"):
@@ -22,7 +22,7 @@ class ParselParse(BaseParse[ParselStrategy, ParselResult]):
             yield await self.consumer.base2(link)
 
 
-@ParselParse()
+@MyParse()
 class Quotes(uplink.Consumer):
     @uplink.get("/tag/humor/{name}")
     def base(self, name: uplink.Path = ""):
