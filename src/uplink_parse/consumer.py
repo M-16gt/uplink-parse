@@ -1,3 +1,5 @@
+# TODO: Сделать отдельной библиотекой
+
 from collections.abc import Mapping
 from typing import Any, ClassVar
 

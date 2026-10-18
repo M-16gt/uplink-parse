@@ -16,6 +16,8 @@ _cv_ctx: contextvars.ContextVar[ScraperCtxData | None] = contextvars.ContextVar(
 
 
 class CtxProxy:
+    __slots__ = ()
+
     response: Any
 
     @staticmethod
@@ -31,6 +33,9 @@ class CtxProxy:
 
     def __getattr__(self, item: str) -> Any:
         return getattr(self._get_data(), item)
+
+    def __setattr__(self, item: str, value: Any) -> None:
+        setattr(self._get_data(), item, value)
 
 
 ctx = CtxProxy()

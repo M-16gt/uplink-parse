@@ -24,9 +24,6 @@ class Parseable:
             if (meta := _field_meta(value)) is not None:
                 meta.name = name
                 names.add(name)
-
-        # Какая именно функция стоит за именем, решает MRO, а не порядок баз:
-        # так работают и переопределение, и ромб, и замена поля обычным атрибутом.
         setattr(
             cls,
             Markers.PARSE_FIELDS,

@@ -22,6 +22,7 @@ class HookPoint(str, Enum):
     """Точки, куда можно повесить хук. Значение = имя поля в ``HookSpec``."""
 
     PRE = "pre"
+    PARAMS = "params"
     POST = "post"
     ERROR = "error"
 
@@ -29,6 +30,7 @@ class HookPoint(str, Enum):
 @attrs.define
 class HookSpec:
     pre: list[Callable[..., Any]] = attrs.field(factory=list)
+    params: list[Callable[..., Any]] = attrs.field(factory=list)
     post: list[Callable[..., Any]] = attrs.field(factory=list)
     error: list[Callable[..., Any]] = attrs.field(factory=list)
 
