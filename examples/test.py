@@ -6,8 +6,8 @@ import aiohttp
 import uplink
 
 start = time.time()
-from uplink_parse.core.parse import BaseParse
-from uplink_parse.core.strategies.bs4 import BS4Strategy, BS4Result
+from uplink_parse.core.parse.bs4 import BS4Parse
+
 
 from uplink_parse.decorators.field import field
 from uplink_parse.decorators.fields import fields
@@ -15,7 +15,7 @@ from uplink_parse.future import add_request_to_ctx
 from uplink_parse.core.hooks import prehook, SKIP
 
 
-class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
+class PypiStatsProjectParse(BS4Parse):
     # consumer: "PypiStats"
     _patterns = [
         (name.lower(), rf"{name}:\s*\n\s*([^\n<]+)")
@@ -35,6 +35,7 @@ class PypiStatsProjectParse(BaseParse[BS4Strategy, BS4Result]):
 
     @field
     def package_name(self):
+        print(self.request.url)
         return self.response.select("section > h1")[0].get_text(strip=True)
 
     @field
@@ -68,7 +69,6 @@ async def main():
         )
 
         result = await client.project_data(name="requests")
-        print(f"📦 Тип результата: {type(result)}")
         print(result)
 
 

@@ -3,10 +3,9 @@ import asyncio
 import aiohttp
 import uplink
 
-from uplink_parse.core.strategies.parsel import ParselResult, ParselStrategy
-
 from uplink_parse.core.parse.parsel import ParselParse
-from uplink_parse.decorators.field import field
+from uplink_parse.decorators import field
+from uplink_parse.consumer import DynamicConsumer
 
 
 class MyParse(ParselParse):
@@ -17,19 +16,15 @@ class MyParse(ParselParse):
                 "author": quote.xpath("span/small/text()").get(),
                 "text": quote.css("span.text::text").get(),
             }
-        link = self.response.css('li.next a::attr("href")').get()
-        if link is not None:
-            yield await self.consumer.base2(link)
+        href = self.response.css('li.next a::attr("href")').get()
+        if href is not None:
+            yield await self.follow(href)
 
 
 @MyParse()
-class Quotes(uplink.Consumer):
+class Quotes(DynamicConsumer):
     @uplink.get("/tag/humor/{name}")
     def base(self, name: uplink.Path = ""):
-        pass
-
-    @uplink.get("/{data}")
-    def base2(self, data: uplink.Path):
         pass
 
 

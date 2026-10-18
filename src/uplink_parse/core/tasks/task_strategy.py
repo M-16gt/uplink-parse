@@ -5,6 +5,7 @@ from typing import Any
 
 from uplink_parse.core.exceptions import StrategyNotFoundError
 from uplink_parse.core.tasks.compat import (
+    await_or_return,
     isasyncgenfunction,
     iscoroutinefunction,
     isgeneratorfunction,
@@ -59,7 +60,7 @@ class _FuncAsyncGenStrategy(BaseTaskStrategy):
         gen = target()
         batch = []
         async for item in gen:
-            batch.append(item)
+            batch.append(await await_or_return(item))
             if len(batch) >= batch_size:
                 self._flush_batch(lst, batch)
         if batch:
@@ -79,7 +80,7 @@ class _FuncSyncGenStrategy(BaseTaskStrategy):
             if use_thread
             else list(target())
         )
-        self._flush_batch(lst, data)
+        self._flush_batch(lst, [await await_or_return(item) for item in data])
 
 
 class _FuncAsyncStrategy(BaseTaskStrategy):
@@ -90,7 +91,7 @@ class _FuncAsyncStrategy(BaseTaskStrategy):
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
-        self._flush_batch(lst, [await target()])
+        self._flush_batch(lst, [await await_or_return(await target())])
 
 
 class _FuncSyncStrategy(BaseTaskStrategy):
@@ -101,6 +102,5 @@ class _FuncSyncStrategy(BaseTaskStrategy):
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
-        self._flush_batch(
-            lst, [await asyncio.to_thread(target) if use_thread else target()]
-        )
+        result = await asyncio.to_thread(target) if use_thread else target()
+        self._flush_batch(lst, [await await_or_return(result)])

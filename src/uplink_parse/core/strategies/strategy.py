@@ -12,6 +12,8 @@ from uplink_parse.core.strategies.accessor import ResponseAccessor
 from uplink_parse.core.tasks.compat import await_or_return
 
 
+# TODO: Переделать Strategy.read_response, чтобы было более удобно пользоваться
+# TODO: исключениями из правил
 class Strategy(
     StrategyGeneric[output_data_from_func, attr_name], check_typevars=("attr_name",)
 ):
@@ -28,7 +30,6 @@ class Strategy(
                 source=self.__class__.__name__,
             ) from exc
 
-    # Можно переопределять в случае нужды в подклассса Strategy
     async def read_response(self, response: Any, **params: Any) -> Any:
         attrs = get_args(self.config_types["attr_name"])
         return await await_or_return(ResponseAccessor.get_any(response, *attrs))

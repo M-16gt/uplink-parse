@@ -25,6 +25,7 @@ except ImportError:
 from uplink_parse.core._dataclasses import Storage
 from uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
 from uplink_parse.core.parse.factory import configure_parse
+from uplink_parse.core.parse.follow import FollowMixin
 from uplink_parse.core.parse.runner import execute_parse, run_parse
 from uplink_parse.core.strategies.strategy import Strategy
 from uplink_parse.core.utils.ctx import ctx
@@ -44,7 +45,10 @@ class _ParseObj(ParseGeneric[strategy, strategy_rt]):
 
 
 class BaseParse(
-    Parseable, _ParseObj[strategy, strategy_rt], check_typevars=("strategy",)
+    Parseable,
+    FollowMixin,
+    _ParseObj[strategy, strategy_rt],
+    check_typevars=("strategy",),
 ):
     storage: Storage
 
