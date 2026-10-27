@@ -5,7 +5,6 @@ from typing import Any, ClassVar
 
 from uplink import (
     Body,
-    Consumer,
     FieldMap,
     HeaderMap,
     PartMap,
@@ -14,10 +13,13 @@ from uplink import (
     form_url_encoded,
     multipart,
 )
+from uplink import (
+    Consumer as _Consumer,
+)
 from uplink import json as json_request
 from uplink.commands import HttpMethodFactory
 
-__all__ = ["DynamicConsumer"]
+__all__ = ["Consumer"]
 
 _METHODS = {"GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"}
 
@@ -48,7 +50,7 @@ _KINDS = {
 }
 
 
-class DynamicConsumer(Consumer):  # type: ignore[misc]
+class Consumer(_Consumer):  # type: ignore[misc]
     """Uplink consumer that can send requests without declaring an endpoint."""
 
     _definitions: ClassVar[dict[tuple[str, str | None], Any]] = {}

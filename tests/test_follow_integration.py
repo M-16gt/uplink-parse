@@ -7,7 +7,7 @@ aiohttp = pytest.importorskip("aiohttp")
 pytest.importorskip("parsel")
 from aiohttp import web  # noqa: E402
 
-from uplink_parse.consumer import DynamicConsumer  # noqa: E402
+from uplink_parse.consumer import Consumer  # noqa: E402
 from uplink_parse.core.parse.parsel import ParselParse  # noqa: E402
 from uplink_parse.decorators import field  # noqa: E402
 
@@ -23,7 +23,7 @@ class Page(ParselParse):
 
 
 @Page()
-class Site(DynamicConsumer):
+class Site(Consumer):
     @uplink.get("/start")
     def start(self):
         pass

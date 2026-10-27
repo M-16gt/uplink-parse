@@ -104,6 +104,7 @@ def build_parse_meta(owner: Any) -> ParseMeta:
 class ScraperCtxData:
     response: Any | None = None
     response_raw: Any | None = None
+    response_info: Any | None = None
     consumer: Any | None = None
     scraper: Any | None = None
     request: Any | None = None

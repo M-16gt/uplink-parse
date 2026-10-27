@@ -5,6 +5,7 @@ from collections.abc import Coroutine
 from typing import TYPE_CHECKING, Any
 
 from uplink_parse.core.processor import extract_all
+from uplink_parse.core.response_info import ResponseInfo
 from uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 if TYPE_CHECKING:
@@ -18,6 +19,7 @@ async def execute_parse(instance: BaseParse[Any, Any], *args: Any) -> Any:
         scraper=instance,
         response_raw=args[-1],
     ):
+        ctx.response_info = ResponseInfo()
         if instance.use_parse_response():
             ctx.response = await instance.parse_response()
         return await extract_all(instance)

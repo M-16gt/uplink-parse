@@ -4,7 +4,7 @@ from threading import Thread
 import pytest
 
 pytest.importorskip("uplink")
-from uplink_parse.consumer import DynamicConsumer  # noqa: E402
+from uplink_parse.consumer import Consumer  # noqa: E402
 
 
 class Handler(BaseHTTPRequestHandler):
@@ -20,7 +20,7 @@ def test_request_accepts_absolute_url_on_another_host() -> None:
     thread.start()
     try:
         url = f"http://127.0.0.1:{server.server_port}/page"
-        response = DynamicConsumer("https://unused.example").request("GET", url)
+        response = Consumer("https://unused.example").request("GET", url)
         assert response.status_code == 200
         assert response.text == "ok"
     finally:

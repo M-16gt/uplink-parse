@@ -35,7 +35,6 @@ class PypiStatsProjectParse(BS4Parse):
 
     @field
     def package_name(self):
-        print(self.request.url)
         return self.response.select("section > h1")[0].get_text(strip=True)
 
     @field

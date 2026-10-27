@@ -3,6 +3,8 @@ from __future__ import annotations
 import functools
 from typing import TYPE_CHECKING, Any
 
+from uplink_parse.core.response_info import ResponseInfo
+
 if TYPE_CHECKING:
     from typing_extensions import Self
 else:
@@ -27,17 +29,15 @@ from uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
 from uplink_parse.core.parse.factory import configure_parse
 from uplink_parse.core.parse.follow import FollowMixin
 from uplink_parse.core.parse.runner import execute_parse, run_parse
-from uplink_parse.core.strategies.strategy import Strategy
 from uplink_parse.core.utils.ctx import ctx
 
 
 class _ParseObj(ParseGeneric[strategy, strategy_rt]):
-    config_checks = {"strategy": (Strategy,)}
-
     scraper: Self
     response: strategy_rt
-    consumer: Any
     response_raw: Any
+    response_info: ResponseInfo
+    consumer: Any
     request: Any
 
     def __getattr__(self, item: str) -> Any:

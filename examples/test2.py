@@ -5,12 +5,13 @@ import uplink
 
 from uplink_parse.core.parse.parsel import ParselParse
 from uplink_parse.decorators import field
-from uplink_parse.consumer import DynamicConsumer
+from uplink_parse.consumer import Consumer
 
 
 class MyParse(ParselParse):
     @field
     async def data(self):
+        print(self.response_info)
         for quote in self.response.css("div.quote"):
             yield {
                 "author": quote.xpath("span/small/text()").get(),
@@ -22,9 +23,9 @@ class MyParse(ParselParse):
 
 
 @MyParse()
-class Quotes(DynamicConsumer):
+class Quotes(Consumer):
     @uplink.get("/tag/humor/{name}")
-    def base(self, name: uplink.Path = ""):
+    def base(self, name: uplink.Path | str = ""):
         pass
 
 

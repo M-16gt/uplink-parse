@@ -24,7 +24,7 @@ class FollowMixin:
                 raise ValueError("Pass href or url to follow")
             target_url = str(url)
         else:
-            base_url = ctx.response_raw.url if url is None else url
+            base_url = ctx.response_info.url if url is None else url
             target_url = urljoin(str(base_url), href)
 
         consumer = ctx.consumer
