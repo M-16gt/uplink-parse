@@ -1,22 +1,39 @@
 from __future__ import annotations
 
 import asyncio
+import inspect
+from functools import singledispatch
 from typing import Any
 
-from uplink_parse.core.exceptions import StrategyNotFoundError
-from uplink_parse.core.tasks.compat import (
-    await_or_return,
-    isasyncgenfunction,
-    iscoroutinefunction,
-    isgeneratorfunction,
-)
+from uplink_parse.core.tasks.compat import await_or_return, code_kind
 from uplink_parse.core.utils import to_list
 from uplink_parse.core.utils.singleton import get_instance
 
 
-# TODO: Переделать систему cls.__subclasses__() -> регистр TaskStrategy
 class BaseTaskStrategy:
-    slots = ()
+    """Как выполнить поле и сложить результат в ``lst``.
+
+    Встроенные виды (функция, генератор, корутина, async-генератор) выбираются
+    по флагам кода. Свой вид объявляется одной строкой и регистрируется сам,
+    порядок объявления ни на что не влияет::
+
+        class GlomStrategy(BaseTaskStrategy, targets=(TType,)):
+            async def __call__(self, target, lst, batch_size, use_thread): ...
+
+    Стратегия — без состояния (один экземпляр на класс).
+    """
+
+    __slots__ = ()
+
+    # TODO: Переделать, чтобы работало через BaseGeneric с оберткой над config_types
+    def __init_subclass__(
+        cls, *, targets: tuple[type, ...] = (), **kwargs: Any
+    ) -> None:
+        super().__init_subclass__(**kwargs)
+        for target_type in targets:
+            select_strategy.register(
+                target_type, lambda _target, cls=cls: get_instance(cls)
+            )
 
     @staticmethod
     def _flush_batch(lst: list[Any], batch: list[Any]) -> None:
@@ -29,32 +46,17 @@ class BaseTaskStrategy:
             lst.extend(to_list(item))
         batch.clear()
 
-    @staticmethod
-    def is_supported(target: Any) -> bool:
-        raise NotImplementedError
-
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
         raise NotImplementedError
 
-    @classmethod
-    def get_strategy(cls, target: Any) -> object:
-        for strategy in cls.__subclasses__():
-            if strategy.is_supported(target):
-                return get_instance(strategy)
-        raise StrategyNotFoundError(
-            f"No BaseTaskStrategy subclass supports target {target!r}.",
-            details={"target": target},
-            source=cls.__name__,
-        )
+    @staticmethod
+    def get_strategy(target: Any) -> BaseTaskStrategy:
+        return select_strategy(target)
 
 
 class _FuncAsyncGenStrategy(BaseTaskStrategy):
-    @staticmethod
-    def is_supported(target: Any) -> bool:
-        return isasyncgenfunction(target)
-
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
@@ -69,10 +71,6 @@ class _FuncAsyncGenStrategy(BaseTaskStrategy):
 
 
 class _FuncSyncGenStrategy(BaseTaskStrategy):
-    @staticmethod
-    def is_supported(target: Any) -> bool:
-        return isgeneratorfunction(target)
-
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
@@ -85,10 +83,6 @@ class _FuncSyncGenStrategy(BaseTaskStrategy):
 
 
 class _FuncAsyncStrategy(BaseTaskStrategy):
-    @staticmethod
-    def is_supported(target: Any) -> bool:
-        return iscoroutinefunction(target)
-
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
@@ -96,12 +90,23 @@ class _FuncAsyncStrategy(BaseTaskStrategy):
 
 
 class _FuncSyncStrategy(BaseTaskStrategy):
-    @staticmethod
-    def is_supported(target: Any) -> bool:
-        return callable(target)
-
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
         result = await asyncio.to_thread(target) if use_thread else target()
         self._flush_batch(lst, [await await_or_return(result)])
+
+
+_BY_KIND: dict[int, BaseTaskStrategy] = {
+    0: get_instance(_FuncSyncStrategy),
+    inspect.CO_GENERATOR: get_instance(_FuncSyncGenStrategy),
+    inspect.CO_COROUTINE: get_instance(_FuncAsyncStrategy),
+    inspect.CO_ASYNC_GENERATOR: get_instance(_FuncAsyncGenStrategy),
+}
+
+
+@singledispatch
+def select_strategy(target: Any) -> BaseTaskStrategy:
+    """Стратегия для ``target``: сначала зарегистрированная по типу
+    (``targets=`` у подкласса), иначе по виду функции — один lookup."""
+    return _BY_KIND.get(code_kind(target), _BY_KIND[0])

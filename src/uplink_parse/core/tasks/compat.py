@@ -4,9 +4,9 @@ import functools
 import inspect
 from typing import Any
 
-_CO_GENERATOR = inspect.CO_GENERATOR
-_CO_COROUTINE = inspect.CO_COROUTINE
-_CO_ASYNC_GENERATOR = inspect.CO_ASYNC_GENERATOR
+#: Флаги кода, определяющие вид функции. Взаимоисключающие: у функции
+#: выставлен не больше одного, поэтому вид — это просто ``flags & маска``.
+_KIND_MASK = inspect.CO_GENERATOR | inspect.CO_COROUTINE | inspect.CO_ASYNC_GENERATOR
 
 
 def _code_flags(func: Any) -> int:
@@ -17,16 +17,11 @@ def _code_flags(func: Any) -> int:
     return code.co_flags if code is not None else 0
 
 
-def iscoroutinefunction(func: Any) -> bool:
-    return bool(_code_flags(func) & _CO_COROUTINE)
-
-
-def isasyncgenfunction(func: Any) -> bool:
-    return bool(_code_flags(func) & _CO_ASYNC_GENERATOR)
-
-
-def isgeneratorfunction(func: Any) -> bool:
-    return bool(_code_flags(func) & _CO_GENERATOR)
+def code_kind(func: Any) -> int:
+    """Вид функции одним числом: ``0`` (обычная) или один из флагов
+    ``CO_GENERATOR`` / ``CO_COROUTINE`` / ``CO_ASYNC_GENERATOR``.
+    Для объектов без кода (вызываемые классы и т.п.) — ``0``."""
+    return _code_flags(func) & _KIND_MASK
 
 
 async def await_or_return(obj: Any) -> Any:
