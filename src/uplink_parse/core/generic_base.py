@@ -8,6 +8,8 @@ from uplink_parse.core.exceptions import GenericConfigError
 __all__ = ["GenericBase"]
 
 
+# TODO?: Добавить возможность проверки приходящего типа
+# TODO?: на основе указанного типа в TypeVar
 class GenericBase:
     config_types: types.MappingProxyType[str, Any]
     _check_typevars: tuple[str, ...] = ()

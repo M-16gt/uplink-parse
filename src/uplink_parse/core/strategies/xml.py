@@ -8,4 +8,4 @@ XMLResult = ET.Element
 
 class XMLStrategy(Strategy[XMLResult, Literal["text"]]):
     def transform(self, raw: str, **params: Any) -> ET.Element:
-        return ET.fromstring(raw)
+        return ET.fromstring(raw, **params)

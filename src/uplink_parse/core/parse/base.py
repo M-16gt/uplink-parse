@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import functools
+from collections.abc import Mapping
 from typing import TYPE_CHECKING, Any
 
 from uplink_parse.core.response_info import ResponseInfo
@@ -24,7 +25,7 @@ except ImportError:
         return handler
 
 
-from uplink_parse.core._dataclasses import Storage
+from uplink_parse.core._dataclasses import ParseConfig, Storage
 from uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
 from uplink_parse.core.parse.factory import configure_parse
 from uplink_parse.core.parse.follow import FollowMixin
@@ -56,10 +57,19 @@ class BaseParse(
         cls,
         *,
         is_decorator: bool = True,
-        strategy_params: dict[str, Any] | None = None,
+        config: ParseConfig | None = None,
+        strategy_params: Mapping[str, Any] | None = None,
+        read_params: Mapping[str, Any] | None = None,
     ) -> Any:
+        """``config`` — готовый ``ParseConfig``; ``strategy_params`` и
+        ``read_params`` — сокращения, которые дополняют его поверх."""
         instance = super().__new__(cls)
-        configure_parse(instance, strategy_params)
+        configure_parse(
+            instance,
+            (config or ParseConfig()).merged(
+                strategy_params=strategy_params, read_params=read_params
+            ),
+        )
         return instance if not is_decorator else parse(instance)
 
     async def _call_async(self, *args: Any, **kwargs: Any) -> Any:
@@ -69,9 +79,24 @@ class BaseParse(
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
         return run_parse(self._call_async(*args, **kwargs))
 
-    async def parse_response(self, **strategy_params: Any) -> Any:
+    async def parse_response(
+        self,
+        *,
+        strategy_params: Mapping[str, Any] | None = None,
+        read_params: Mapping[str, Any] | None = None,
+    ) -> Any:
+        """Превратить ``ctx.response_raw`` в ``ctx.response``.
+
+        Параметры из ``storage.config``; переданные здесь дополняют их
+        только для этого вызова.
+        """
+        config = self.storage.config.merged(
+            strategy_params=strategy_params, read_params=read_params
+        )
         return await get_instance(self.config_types["strategy"])(
-            ctx.response_raw, **strategy_params
+            ctx.response_raw,
+            read_params=config.read_params,
+            transform_params=config.strategy_params,
         )
 
     @staticmethod

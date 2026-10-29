@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import copy
-from collections.abc import Callable
+from collections.abc import Callable, Mapping
 from enum import Enum
 from types import MethodType
 from typing import TYPE_CHECKING, Any, TypeVar
@@ -110,7 +110,58 @@ class ScraperCtxData:
     request: Any | None = None
 
 
+def _params(value: Mapping[str, Any] | None) -> dict[str, Any]:
+    """Копия параметров: конфиг не должен меняться снаружи по ссылке."""
+    return dict(value or {})
+
+
+@attrs.define(frozen=True, kw_only=True)
+class ParseConfig:
+    """Всё, что можно настроить у парсера. Лежит в ``Storage.config``.
+
+    Неизменяемый: новые значения делаются через :meth:`merged` или
+    ``attrs.evolve``, поэтому один конфиг можно безопасно делить между
+    парсерами.
+
+    Attributes:
+        strategy_params: именованные аргументы для ``Strategy.transform`` —
+            то, во что сырой ответ превращается (``features`` у BeautifulSoup,
+            ``parser`` у XML и т.п.).
+        read_params: именованные аргументы для вызова атрибута ответа, из
+            которого стратегия читает данные: ``response.text(encoding=...)``,
+            ``response.json(loads=...)``. Если атрибут не вызываемый
+            (``requests.Response.text``), параметры игнорируются.
+        batch_size: сколько элементов асинхронного генератора копить до
+            сброса в результат.
+        use_thread_for_sync: выполнять синхронные поля в потоке.
+    """
+
+    strategy_params: dict[str, Any] = attrs.field(factory=dict, converter=_params)
+    read_params: dict[str, Any] = attrs.field(factory=dict, converter=_params)
+    batch_size: int = attrs.field(
+        default=200,
+        validator=[attrs.validators.instance_of(int), attrs.validators.gt(0)],
+    )
+    use_thread_for_sync: bool = True
+
+    def merged(
+        self,
+        *,
+        strategy_params: Mapping[str, Any] | None = None,
+        read_params: Mapping[str, Any] | None = None,
+    ) -> ParseConfig:
+        """Копия, где переданные параметры дополняют (и перекрывают) текущие."""
+        if not strategy_params and not read_params:
+            return self
+        return attrs.evolve(
+            self,
+            strategy_params={**self.strategy_params, **(strategy_params or {})},
+            read_params={**self.read_params, **(read_params or {})},
+        )
+
+
 @attrs.define(slots=False)
 class Storage:
     parse_funcs_meta: ParseMeta
     task_runner: TaskRunner
+    config: ParseConfig

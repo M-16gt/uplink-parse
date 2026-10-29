@@ -14,6 +14,7 @@ from uplink_parse.core.utils import to_list
 from uplink_parse.core.utils.singleton import get_instance
 
 
+# TODO: Переделать систему cls.__subclasses__() -> регистр TaskStrategy
 class BaseTaskStrategy:
     slots = ()
 

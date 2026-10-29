@@ -9,4 +9,4 @@ BS4Result: TypeAlias = BeautifulSoup
 
 class BS4Strategy(Strategy[BS4Result, Literal["text"]]):
     def transform(self, raw: str, **params: Any) -> BS4Result:
-        return BeautifulSoup(raw, **(params or {"features": "html.parser"}))
+        return BeautifulSoup(raw, **{"features": "html.parser", **params})
