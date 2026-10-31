@@ -89,22 +89,5 @@ class StrategyError(UplinkParseError):
     pass
 
 
-class UnsupportedClientError(StrategyError):
-    pass
-
-
 class ResponseParsingError(StrategyError):
-    pass
-
-
-# --------------------------------------------------------------------------- #
-# task_strategy.py — стратегии выполнения задач (async gen / coro / sync / ...)
-# --------------------------------------------------------------------------- #
-
-
-class TaskStrategyError(UplinkParseError):
-    pass
-
-
-class StrategyNotFoundError(TaskStrategyError):
     pass

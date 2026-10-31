@@ -4,12 +4,25 @@ import asyncio
 from collections.abc import Coroutine
 from typing import TYPE_CHECKING, Any
 
-from uplink_parse.core.processor import extract_all
 from uplink_parse.core.response_info import ResponseInfo
+from uplink_parse.core.utils import to_dict
 from uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 if TYPE_CHECKING:
     from uplink_parse.core.parse.base import BaseParse
+
+
+async def extract_all(
+    owner: Any, target: dict[str, Any] | None = None
+) -> dict[str, Any]:
+    target = to_dict(target)
+    groups = owner.storage.parse_funcs_meta
+    results = await asyncio.gather(
+        *[owner.storage.task_runner(metas) for metas in groups.values()]
+    )
+    for populate, result in zip(groups, results, strict=True):
+        target = populate(result, target)
+    return target
 
 
 async def execute_parse(instance: BaseParse[Any, Any], *args: Any) -> Any:

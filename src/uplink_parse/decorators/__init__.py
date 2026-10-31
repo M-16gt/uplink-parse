@@ -1,5 +1,12 @@
 from uplink_parse.core.hooks import errorhook, paramshook, posthook, prehook
-from uplink_parse.decorators.field import field
-from uplink_parse.decorators.fields import fields
+from uplink_parse.decorators.processor import field, fields, processor
 
-__all__ = ["field", "fields", "prehook", "paramshook", "posthook", "errorhook"]
+__all__ = [
+    "processor",
+    "field",
+    "fields",
+    "prehook",
+    "paramshook",
+    "posthook",
+    "errorhook",
+]
