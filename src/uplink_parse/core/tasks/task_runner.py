@@ -7,7 +7,7 @@ from typing import Any
 
 from uplink_parse.core._dataclasses import FuncMeta, HookPoint, HookSpec
 from uplink_parse.core.hooks import SKIP, UNHANDLED
-from uplink_parse.core.tasks.compat import await_or_return
+from uplink_parse.core.utils import await_or_return
 
 
 class TaskRunner:

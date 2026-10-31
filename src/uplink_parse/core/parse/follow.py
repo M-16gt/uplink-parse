@@ -4,7 +4,7 @@ from collections.abc import Callable
 from typing import Any, cast
 from urllib.parse import urljoin
 
-from uplink_parse.core.tasks.compat import await_or_return
+from uplink_parse.core.utils import await_or_return
 from uplink_parse.core.utils.ctx import ctx
 
 

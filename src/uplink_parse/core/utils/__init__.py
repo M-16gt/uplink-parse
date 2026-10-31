@@ -1,12 +1,10 @@
+from __future__ import annotations
+
 from typing import Any, cast
 
 # from uplink_parse.core.utils.ctx import ctx
 
-__all__ = [
-    "to_list",
-    "to_dict",
-    "is_stateless",
-]
+__all__ = ["to_list", "to_dict", "is_stateless", "await_or_return"]
 
 
 def to_list(obj: Any) -> list[Any] | tuple[Any, ...]:
@@ -24,3 +22,9 @@ def is_stateless(cls: Any) -> bool:
     if init is object.__init__:
         return True
     return cast(bool, init.__code__.co_argcount == 1)
+
+
+async def await_or_return(obj: Any) -> Any:
+    if hasattr(obj, "__await__"):
+        return await obj
+    return obj

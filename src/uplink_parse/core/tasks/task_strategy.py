@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 import asyncio
+import functools
 import inspect
 from functools import singledispatch
 from typing import Any
 
-from uplink_parse.core.tasks.compat import await_or_return, code_kind
-from uplink_parse.core.utils import to_list
+from uplink_parse.core.utils import await_or_return, to_list
 from uplink_parse.core.utils.singleton import get_instance
 
 
@@ -103,6 +103,16 @@ _BY_KIND: dict[int, BaseTaskStrategy] = {
     inspect.CO_COROUTINE: get_instance(_FuncAsyncStrategy),
     inspect.CO_ASYNC_GENERATOR: get_instance(_FuncAsyncGenStrategy),
 }
+
+_KIND_MASK = inspect.CO_GENERATOR | inspect.CO_COROUTINE | inspect.CO_ASYNC_GENERATOR
+
+
+def code_kind(func: Any) -> int:
+    func = getattr(func, "__func__", func)
+    while isinstance(func, functools.partial):
+        func = func.func
+    code = getattr(func, "__code__", None)
+    return (code.co_flags if code is not None else 0) & _KIND_MASK
 
 
 @singledispatch

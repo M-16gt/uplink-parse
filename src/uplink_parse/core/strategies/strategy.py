@@ -10,7 +10,7 @@ from uplink_parse.core._generics import (
 )
 from uplink_parse.core.exceptions import ResponseParsingError
 from uplink_parse.core.strategies.accessor import ResponseAccessor
-from uplink_parse.core.tasks.compat import await_or_return
+from uplink_parse.core.utils import await_or_return
 
 
 # TODO: Переделать Strategy.read_response, чтобы было более удобно пользоваться
