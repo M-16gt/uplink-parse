@@ -1,8 +1,8 @@
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from uplink_parse.core._dataclasses import FuncMeta, PopulateFunc, meta_decorator
 from uplink_parse.core.tasks.task_strategy import BaseTaskStrategy
+from uplink_parse.decorators.meta import FuncMeta, PopulateFunc, meta_decorator
 
 __all__ = ["PopulateFunc", "processor", "field", "fields"]
 

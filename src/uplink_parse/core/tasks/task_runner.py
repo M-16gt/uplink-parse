@@ -5,12 +5,18 @@ from collections.abc import Iterable, Mapping
 from functools import partial
 from typing import Any
 
-from uplink_parse.core._dataclasses import FuncMeta, HookPoint, HookSpec
-from uplink_parse.core.hooks import SKIP, UNHANDLED
 from uplink_parse.core.utils import await_or_return
+from uplink_parse.decorators.hooks import SKIP, UNHANDLED
+from uplink_parse.decorators.meta import FuncMeta, HookPoint, HookSpec, PopulateFunc
 
 
 class TaskRunner:
+    """Уровень 3: выполняет поля парсера и собирает из них итоговый словарь.
+
+    Вход — ``__call__(groups)``, где ``groups`` — поля, сгруппированные по
+    ``populate``.
+    """
+
     def __init__(
         self,
         batch_size: int = 200,
@@ -72,7 +78,7 @@ class TaskRunner:
                     return value
             raise
 
-    async def __call__(self, funcs: Iterable[FuncMeta]) -> dict[str, Any]:
+    async def _run_group(self, funcs: Iterable[FuncMeta]) -> dict[str, Any]:
         metas = list(funcs)
         values = await asyncio.gather(*(self._run_field(meta) for meta in metas))
         return {
@@ -80,3 +86,12 @@ class TaskRunner:
             for meta, value in zip(metas, values, strict=True)
             if value is not SKIP
         }
+
+    async def __call__(
+        self, groups: Mapping[PopulateFunc, list[FuncMeta]]
+    ) -> dict[str, Any]:
+        results = await asyncio.gather(*(self._run_group(m) for m in groups.values()))
+        target: dict[str, Any] = {}
+        for populate, result in zip(groups, results, strict=True):
+            target = populate(result, target)
+        return target

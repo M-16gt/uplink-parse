@@ -3,8 +3,8 @@ from __future__ import annotations
 from collections.abc import Callable
 from typing import Any, TypeVar
 
-from uplink_parse.core._dataclasses import HookPoint, HookSpec, get_func_meta
 from uplink_parse.core.utils.markers import Markers
+from uplink_parse.decorators.meta import HookPoint, HookSpec, get_func_meta
 
 __all__ = [
     "SKIP",

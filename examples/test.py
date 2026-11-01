@@ -11,7 +11,7 @@ from uplink_parse.core.parse.bs4 import BS4Parse
 
 from uplink_parse.decorators import field, fields
 from uplink_parse.future import add_request_to_ctx
-from uplink_parse.core.hooks import prehook, SKIP
+from uplink_parse.decorators import prehook, SKIP
 
 
 class PypiStatsProjectParse(BS4Parse):

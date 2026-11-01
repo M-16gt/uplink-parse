@@ -1,10 +1,7 @@
-from __future__ import annotations
+import inspect
+from typing import Any
 
-from typing import Any, cast
-
-# from uplink_parse.core.utils.ctx import ctx
-
-__all__ = ["to_list", "to_dict", "is_stateless", "await_or_return"]
+__all__ = ["to_list", "is_stateless", "await_or_return"]
 
 
 def to_list(obj: Any) -> list[Any] | tuple[Any, ...]:
@@ -13,15 +10,22 @@ def to_list(obj: Any) -> list[Any] | tuple[Any, ...]:
     return [obj] if obj is not None else []
 
 
-def to_dict(obj: Any) -> dict[str, Any]:
-    return obj if isinstance(obj, dict) else {}
+_VAR_ARGS = inspect.CO_VARARGS | inspect.CO_VARKEYWORDS
 
 
 def is_stateless(cls: Any) -> bool:
+    """``True``, если ``cls()`` можно вызвать без аргументов: ``init`` не
+    объявлен или принимает только ``self`` (``*args``, ``**kwargs`` и
+    keyword-only параметры тоже считаются состоянием)."""
     init = cls.__init__
     if init is object.__init__:
         return True
-    return cast(bool, init.__code__.co_argcount == 1)
+    code = init.__code__
+    return (
+        code.co_argcount == 1
+        and not code.co_kwonlyargcount
+        and not code.co_flags & _VAR_ARGS
+    )
 
 
 async def await_or_return(obj: Any) -> Any:

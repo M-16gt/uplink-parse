@@ -1,108 +1,64 @@
+"""Уровень 3: сам парсинг — запуск полей и подзапросы."""
+
 from __future__ import annotations
 
+import asyncio
 import functools
-from collections.abc import Mapping
-from typing import TYPE_CHECKING, Any
+from collections.abc import Callable
+from typing import Any, cast
+from urllib.parse import urljoin
 
-from uplink_parse.core.response_info import ResponseInfo
-
-if TYPE_CHECKING:
-    from typing_extensions import Self
-else:
-    try:
-        from typing import Self
-    except ImportError:  # Python 3.10
-        from typing_extensions import Self
-
-from uplink_parse.core.parseable import Parseable
-from uplink_parse.core.utils.singleton import get_instance
-
-try:
-    from uplink import response_handler
-except ImportError:
-
-    def response_handler(handler: Any, requires_consumer: bool = False) -> Any:
-        return handler
+from uplink_parse.core._generics import strategy, strategy_rt
+from uplink_parse.core.parse.response import ResponseInfo, _ResponseObj
+from uplink_parse.core.utils import await_or_return
+from uplink_parse.core.utils.ctx import ScraperCtx, ctx
 
 
-from uplink_parse.core._dataclasses import ParseConfig, Storage
-from uplink_parse.core._generics import ParseGeneric, strategy, strategy_rt
-from uplink_parse.core.parse.factory import configure_parse
-from uplink_parse.core.parse.follow import FollowMixin
-from uplink_parse.core.parse.runner import execute_parse, run_parse
-from uplink_parse.core.utils.ctx import ctx
-
-
-class _ParseObj(ParseGeneric[strategy, strategy_rt]):
-    scraper: Self
-    response: strategy_rt
-    response_raw: Any
-    response_info: ResponseInfo
-    consumer: Any
-    request: Any
-
-    def __getattr__(self, item: str) -> Any:
-        return getattr(ctx, item)
-
-
-class BaseParse(
-    Parseable,
-    FollowMixin,
-    _ParseObj[strategy, strategy_rt],
-    check_typevars=("strategy",),
-):
-    storage: Storage
-
-    def __new__(
-        cls,
-        *,
-        is_decorator: bool = True,
-        config: ParseConfig | None = None,
-        strategy_params: Mapping[str, Any] | None = None,
-        read_params: Mapping[str, Any] | None = None,
-    ) -> Any:
-        """``config`` — готовый ``ParseConfig``; ``strategy_params`` и
-        ``read_params`` — сокращения, которые дополняют его поверх."""
-        instance = super().__new__(cls)
-        configure_parse(
-            instance,
-            (config or ParseConfig()).merged(
-                strategy_params=strategy_params, read_params=read_params
-            ),
-        )
-        return instance if not is_decorator else parse(instance)
-
+class BaseParse(_ResponseObj[strategy, strategy_rt], check_typevars=("strategy",)):
     async def _call_async(self, *args: Any, **kwargs: Any) -> Any:
-        return await execute_parse(self, *args)
+        with ScraperCtx(
+            response=args[-1],
+            consumer=args[0] if len(args) > 1 else None,
+            scraper=self,
+            response_raw=args[-1],
+        ):
+            ctx.response_info = ResponseInfo()
+            if self.use_parse_response():
+                ctx.response = await self.parse_response()
+            return await self.storage.task_runner(self.storage.parse_funcs_meta)
 
     @functools.wraps(_call_async)
     def __call__(self, *args: Any, **kwargs: Any) -> Any:
-        return run_parse(self._call_async(*args, **kwargs))
+        coro = self._call_async(*args, **kwargs)
+        try:
+            asyncio.get_running_loop()
+        except RuntimeError:
+            return asyncio.run(coro)
+        return coro
 
-    async def parse_response(
+    async def follow(
         self,
+        href: str | None = None,
         *,
-        strategy_params: Mapping[str, Any] | None = None,
-        read_params: Mapping[str, Any] | None = None,
+        url: str | None = None,
+        callback: Callable[[Any, Any], Any] | None = None,
+        method: str = "GET",
+        **options: Any,
     ) -> Any:
-        """Превратить ``ctx.response_raw`` в ``ctx.response``.
+        """Request a URL and parse its response with callback or this parser."""
+        if href is None:
+            if url is None:
+                raise ValueError("Pass href or url to follow")
+            target_url = str(url)
+        else:
+            base_url = ctx.response_info.url if url is None else url
+            target_url = urljoin(str(base_url), href)
 
-        Параметры из ``storage.config``; переданные здесь дополняют их
-        только для этого вызова.
-        """
-        config = self.storage.config.merged(
-            strategy_params=strategy_params, read_params=read_params
+        consumer = ctx.consumer
+        if consumer is None:
+            raise RuntimeError("follow requires a consumer")
+        response = await await_or_return(
+            consumer.request(method, target_url, **options)
         )
-        return await get_instance(self.config_types["strategy"])(
-            ctx.response_raw,
-            read_params=config.read_params,
-            transform_params=config.strategy_params,
-        )
-
-    @staticmethod
-    def use_parse_response() -> bool:
-        return bool(getattr(ctx.response_raw, "status_code", None))
-
-
-def parse(cls: BaseParse[Any, Any]) -> Any:
-    return response_handler(cls.__call__, requires_consumer=True)
+        parser = cast(Callable[[Any, Any], Any], self) if callback is None else callback
+        return await await_or_return(parser(consumer, response))

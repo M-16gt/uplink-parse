@@ -3,8 +3,20 @@ from __future__ import annotations
 import contextvars
 from typing import Any, Literal
 
-from uplink_parse.core._dataclasses import ScraperCtxData
+import attrs
+
 from uplink_parse.core.exceptions import NoActiveContextError
+
+
+@attrs.define(slots=False)
+class ScraperCtxData:
+    response: Any | None = None
+    response_raw: Any | None = None
+    response_info: Any | None = None
+    consumer: Any | None = None
+    scraper: Any | None = None
+    request: Any | None = None
+
 
 _cv_request: contextvars.ContextVar[Any] = contextvars.ContextVar(
     __package__ + ".request", default=None

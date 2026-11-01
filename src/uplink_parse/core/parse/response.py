@@ -1,10 +1,20 @@
-from typing import Any, Callable
+"""
+Уровень 2: объект ответа — ResponseInfo и превращение сырого ответа в ctx.response
+"""
+
+from __future__ import annotations
+
+from collections.abc import Callable, Mapping
+from typing import Any
 from urllib.parse import urlsplit
 
 import attrs
 
+from uplink_parse.core._generics import strategy, strategy_rt
+from uplink_parse.core.parse.obj import _ParseObj
 from uplink_parse.core.strategies.accessor import AttrPath, ResponseAccessor
 from uplink_parse.core.utils.ctx import ctx
+from uplink_parse.core.utils.singleton import get_instance
 
 
 def _auto_field(
@@ -48,3 +58,29 @@ class ResponseInfo:
     method: str | None = _auto_field(
         ("method", "request.method", "request_info.method"), _method
     )
+
+
+class _ResponseObj(_ParseObj[strategy, strategy_rt]):
+    async def parse_response(
+        self,
+        *,
+        strategy_params: Mapping[str, Any] | None = None,
+        read_params: Mapping[str, Any] | None = None,
+    ) -> Any:
+        """Превратить ``ctx.response_raw`` в ``ctx.response``.
+
+        Параметры из ``storage.config``; переданные здесь дополняют их
+        только для этого вызова.
+        """
+        config = self.storage.config.merged(
+            strategy_params=strategy_params, read_params=read_params
+        )
+        return await get_instance(self.config_types["strategy"])(
+            ctx.response_raw,
+            read_params=config.read_params,
+            transform_params=config.strategy_params,
+        )
+
+    @staticmethod
+    def use_parse_response() -> bool:
+        return bool(getattr(ctx.response_raw, "status_code", None))
