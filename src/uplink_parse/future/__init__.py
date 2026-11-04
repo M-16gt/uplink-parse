@@ -13,5 +13,5 @@ class request_auditor(
 
 @request_auditor
 def add_request_to_ctx(request):
-    request.token_ctx = _cv_request.set(request)
+    _cv_request.set([request])
     return request

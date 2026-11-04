@@ -8,7 +8,7 @@ _VAR_ARGS = inspect.CO_VARARGS | inspect.CO_VARKEYWORDS
 
 
 def is_stateless(cls: Any) -> bool:
-    """``True``, если ``cls()`` можно вызвать без аргументов: ``init`` не
+    """``True``, если ``cls()`` можно вызвать без аргументов: ``__init__`` не
     объявлен или принимает только ``self`` (``*args``, ``**kwargs`` и
     keyword-only параметры тоже считаются состоянием)."""
     init = cls.__init__

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import sys
 from collections.abc import Mapping
 from functools import partial
 from itertools import islice
@@ -10,16 +11,22 @@ from uplink_parse.core.utils import await_or_return
 from uplink_parse.decorators.hooks import SKIP, UNHANDLED
 from uplink_parse.decorators.meta import FuncMeta, HookPoint, HookSpec, PopulateFunc
 
+_EAGER = sys.version_info >= (3, 12)
+
 
 async def _gather(coros: list[Any]) -> list[Any]:
+    """Результаты ``coros`` по порядку.
+
+    Одну корутину ждём напрямую: задача и ``gather`` стоят дороже самого поля.
+    С Python 3.12 задачи eager: поле, которому не нужно ждать ввод-вывод,
+    выполняется сразу при создании, без обхода цикла событий.
+    """
     if len(coros) == 1:
         return [await coros[0]]
-    loop = asyncio.get_running_loop()
-    return list(
-        await asyncio.gather(
-            *[asyncio.Task(c, loop=loop, eager_start=True) for c in coros]
-        )
-    )
+    if _EAGER:
+        loop = asyncio.get_running_loop()
+        coros = [asyncio.Task(c, loop=loop, eager_start=True) for c in coros]
+    return list(await asyncio.gather(*coros))
 
 
 class TaskRunner:
@@ -100,7 +107,7 @@ class TaskRunner:
                     self.batch_size,
                     self.use_thread_for_sync,
                 )
-                value = items[0] if len(items) == 1 else items
+                value = items if meta.strategy.stream or len(items) != 1 else items[0]
             else:
                 value = decision
 
@@ -119,6 +126,8 @@ class TaskRunner:
     async def __call__(
         self, groups: Mapping[PopulateFunc, list[FuncMeta]]
     ) -> dict[str, Any]:
+        # Все поля всех групп выполняются одновременно, группы нужны только
+        # чтобы потом вливать результаты своей ``populate``.
         metas = [meta for group in groups.values() for meta in group]
         values = iter(await _gather([self._run_field(meta) for meta in metas]))
         target: dict[str, Any] = {}

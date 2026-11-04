@@ -26,7 +26,13 @@ class ScraperCtxData:
         return factory() if factory is not None else None
 
 
-_cv_request: contextvars.ContextVar[Any] = contextvars.ContextVar(
+#: Запрос, который ``request_auditor`` оставляет для ближайшего ``ScraperCtx``.
+#: Лежит в списке-«коробке», а не напрямую: ``ScraperCtx`` забирает его через
+#: ``pop()``. ``asyncio.run`` и дочерние задачи работают в копии контекста, но
+#: список в копии тот же, поэтому запрос находится и не остаётся лежать в
+#: родительском контексте. ``ContextVar.reset(token)`` в таких случаях падает
+#: с ``ValueError: ... was created in a different Context``.
+_cv_request: contextvars.ContextVar[list[Any] | None] = contextvars.ContextVar(
     __package__ + ".request", default=None
 )
 
@@ -63,9 +69,8 @@ ctx = CtxProxy()
 
 class ScraperCtx:
     def __init__(self, **kwargs: Any) -> None:
-        request = _cv_request.get()
-        if request is not None:
-            _cv_request.reset(request.token_ctx)
+        box = _cv_request.get()
+        request = box.pop() if box else None
         self.data = ScraperCtxData(**kwargs | {"request": request})
         self.token: contextvars.Token[Any] | None = None
 

@@ -4,13 +4,33 @@ import asyncio
 import functools
 import inspect
 from functools import singledispatch
-from typing import Any
+from typing import Any, ClassVar
 
 from uplink_parse.core.utils.singleton import get_instance
 
 
 class BaseTaskStrategy:
+    """Как выполнить поле и сложить результат в ``lst``.
+
+    Результат поля берётся из ``lst``: ровно один элемент — это и есть значение
+    поля, иначе значение — весь список. Стратегия-поток (``stream = True``)
+    всегда отдаёт список, даже из одного элемента или пустой.
+
+    Встроенные виды (функция, генератор, корутина, async-генератор) выбираются
+    по флагам кода. Свой вид объявляется одной строкой и регистрируется сам,
+    порядок объявления ни на что не влияет::
+
+        class GlomStrategy(BaseTaskStrategy, targets=(TType,)):
+            async def __call__(self, target, lst, batch_size, use_thread): ...
+
+    Стратегия — без состояния (один экземпляр на класс).
+    """
+
     __slots__ = ()
+
+    #: ``True`` — поле выдаёт поток значений (генератор) и его результат всегда
+    #: список; ``False`` — одно значение, которое поле возвращает как есть.
+    stream: ClassVar[bool] = False
 
     # TODO: Переделать, чтобы работало через BaseGeneric с оберткой над config_types
     def __init_subclass__(
@@ -24,6 +44,14 @@ class BaseTaskStrategy:
 
     @staticmethod
     def _flush_batch(lst: list[Any], batch: list[Any]) -> None:
+        """Сложить ``batch`` (элементы потока) в ``lst``: списки и кортежи —
+        поэлементно, ``None`` — пропустить, ``{ключ: список}`` — развернуть.
+
+        Горячий путь (по разу на каждый элемент генератора), поэтому без
+        вспомогательных вызовов. По той же причине стратегии ниже проверяют
+        ``hasattr(x, "__await__")`` на месте, а не через ``await_or_return``:
+        каждый его вызов создаёт корутину.
+        """
         for item in batch:
             if isinstance(item, (list, tuple)):
                 lst.extend(item)
@@ -50,6 +78,8 @@ class BaseTaskStrategy:
 
 
 class _FuncAsyncGenStrategy(BaseTaskStrategy):
+    stream = True
+
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
@@ -65,6 +95,8 @@ class _FuncAsyncGenStrategy(BaseTaskStrategy):
 
 
 class _FuncSyncGenStrategy(BaseTaskStrategy):
+    stream = True
+
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
@@ -85,7 +117,7 @@ class _FuncAsyncStrategy(BaseTaskStrategy):
         result = await target()
         if hasattr(result, "__await__"):
             result = await result
-        self._flush_batch(lst, [result])
+        lst.append(result)
 
 
 class _FuncSyncStrategy(BaseTaskStrategy):
@@ -95,13 +127,18 @@ class _FuncSyncStrategy(BaseTaskStrategy):
         result = await asyncio.to_thread(target) if use_thread else target()
         if hasattr(result, "__await__"):
             result = await result
-        self._flush_batch(lst, [result])
+        lst.append(result)
 
 
+#: Флаги кода, определяющие вид функции. Взаимоисключающие: у функции
+#: выставлен не больше одного, поэтому вид — это просто ``flags & маска``.
 _KIND_MASK = inspect.CO_GENERATOR | inspect.CO_COROUTINE | inspect.CO_ASYNC_GENERATOR
 
 
 def code_kind(func: Any) -> int:
+    """Вид функции одним числом: ``0`` (обычная) или один из флагов
+    ``CO_GENERATOR`` / ``CO_COROUTINE`` / ``CO_ASYNC_GENERATOR``.
+    Для объектов без кода (вызываемые классы и т.п.) — ``0``."""
     func = getattr(func, "__func__", func)
     while isinstance(func, functools.partial):
         func = func.func
