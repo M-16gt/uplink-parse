@@ -21,8 +21,8 @@ class BaseParse(_ResponseObj[strategy, strategy_rt], check_typevars=("strategy",
             consumer=args[0] if len(args) > 1 else None,
             scraper=self,
             response_raw=args[-1],
+            response_info_factory=ResponseInfo,
         ):
-            ctx.response_info = ResponseInfo()
             if self.use_parse_response():
                 ctx.response = await self.parse_response()
             return await self.storage.task_runner(self.storage.parse_funcs_meta)

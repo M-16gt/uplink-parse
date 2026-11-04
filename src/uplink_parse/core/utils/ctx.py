@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import contextvars
+import functools
+from collections.abc import Callable
 from typing import Any, Literal
 
 import attrs
@@ -12,10 +14,16 @@ from uplink_parse.core.exceptions import NoActiveContextError
 class ScraperCtxData:
     response: Any | None = None
     response_raw: Any | None = None
-    response_info: Any | None = None
     consumer: Any | None = None
     scraper: Any | None = None
     request: Any | None = None
+    response_info_factory: Callable[[], Any] | None = None
+
+    @functools.cached_property
+    def response_info(self) -> Any:
+        """Строится при первом обращении: читают его редко, а стоит заметно."""
+        factory = self.response_info_factory
+        return factory() if factory is not None else None
 
 
 _cv_request: contextvars.ContextVar[Any] = contextvars.ContextVar(
