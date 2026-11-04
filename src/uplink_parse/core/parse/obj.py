@@ -16,7 +16,7 @@ from uplink_parse.decorators.hooks import class_hooks_of
 from uplink_parse.decorators.meta import FuncMeta, PopulateFunc
 
 if TYPE_CHECKING:
-    from typing_extensions import Self
+    from typing import Self
 
     from uplink_parse.core.parse.response import ResponseInfo
 
@@ -93,8 +93,8 @@ class Storage:
         """Хранилище конкретного экземпляра: у каждого поля ``func`` привязан
         к ``owner`` (на копии, общие меты класса не трогаем)."""
         groups: ParseMeta = {}
-        for meta in owner.parse_fields:
-            local = attrs.evolve(meta, func=MethodType(meta.func, owner))
+        for name, meta in owner.parse_fields.items():
+            local = attrs.evolve(meta, name=name, func=MethodType(meta.func, owner))
             groups.setdefault(local.populate, []).append(local)  # type: ignore[arg-type]
         runner = TaskRunner(
             batch_size=config.batch_size,
@@ -112,29 +112,29 @@ def _field_meta(value: Any) -> FuncMeta | None:
 
 
 class Parseable:
-    """Собирает поля парсера (функции с ``@field``/``@fields``) при создании класса."""
+    """Собирает поля парсера (функции с ``@field``/``@fields``) при создании класса.
+
+    ``parse_fields`` — ``{имя: FuncMeta}`` в порядке объявления (поля базовых
+    классов первыми). Имя берётся из ключа, а не из меты: одна функция может
+    лежать под несколькими именами, и мета на ней общая.
+    """
 
     def __init_subclass__(cls, **kwargs: Any) -> None:
         super().__init_subclass__(**kwargs)
 
-        names: set[str] = {
-            meta.name
-            for base in cls.__bases__
-            for meta in getattr(base, Markers.PARSE_FIELDS, ())
-        }
+        fields: dict[str, FuncMeta] = {}
+        for base in reversed(cls.__bases__):
+            fields.update(getattr(base, Markers.PARSE_FIELDS, {}))
         for name, value in cls.__dict__.items():
             if (meta := _field_meta(value)) is not None:
-                meta.name = name
-                names.add(name)
-        setattr(
-            cls,
-            Markers.PARSE_FIELDS,
-            {meta for n in names if (meta := _field_meta(getattr(cls, n, None)))},
-        )
+                fields[name] = meta
+            elif name in fields:  # переопределили поле обычным атрибутом
+                del fields[name]
+        setattr(cls, Markers.PARSE_FIELDS, fields)
 
     @property
-    def parse_fields(self) -> set[FuncMeta]:
-        return getattr(self, Markers.PARSE_FIELDS, set())
+    def parse_fields(self) -> dict[str, FuncMeta]:
+        return getattr(self, Markers.PARSE_FIELDS, {})
 
 
 class _ParseObj(Parseable, ParseGeneric[strategy, strategy_rt]):

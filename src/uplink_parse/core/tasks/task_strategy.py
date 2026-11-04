@@ -6,23 +6,10 @@ import inspect
 from functools import singledispatch
 from typing import Any
 
-from uplink_parse.core.utils import await_or_return, to_list
 from uplink_parse.core.utils.singleton import get_instance
 
 
 class BaseTaskStrategy:
-    """Как выполнить поле и сложить результат в ``lst``.
-
-    Встроенные виды (функция, генератор, корутина, async-генератор) выбираются
-    по флагам кода. Свой вид объявляется одной строкой и регистрируется сам,
-    порядок объявления ни на что не влияет::
-
-        class GlomStrategy(BaseTaskStrategy, targets=(TType,)):
-            async def __call__(self, target, lst, batch_size, use_thread): ...
-
-    Стратегия — без состояния (один экземпляр на класс).
-    """
-
     __slots__ = ()
 
     # TODO: Переделать, чтобы работало через BaseGeneric с оберткой над config_types
@@ -38,12 +25,18 @@ class BaseTaskStrategy:
     @staticmethod
     def _flush_batch(lst: list[Any], batch: list[Any]) -> None:
         for item in batch:
-            if isinstance(item, dict) and len(item) == 1:
-                _, val = next(iter(item.items()))
-                if isinstance(val, list):
-                    lst.extend(val)
-                    continue
-            lst.extend(to_list(item))
+            if isinstance(item, (list, tuple)):
+                lst.extend(item)
+            elif item is None:
+                continue
+            elif (
+                isinstance(item, dict)
+                and len(item) == 1
+                and isinstance(val := next(iter(item.values())), list)
+            ):
+                lst.extend(val)
+            else:
+                lst.append(item)
         batch.clear()
 
     async def __call__(
@@ -60,10 +53,11 @@ class _FuncAsyncGenStrategy(BaseTaskStrategy):
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
-        gen = target()
         batch = []
-        async for item in gen:
-            batch.append(await await_or_return(item))
+        async for item in target():
+            if hasattr(item, "__await__"):
+                item = await item
+            batch.append(item)
             if len(batch) >= batch_size:
                 self._flush_batch(lst, batch)
         if batch:
@@ -79,14 +73,19 @@ class _FuncSyncGenStrategy(BaseTaskStrategy):
             if use_thread
             else list(target())
         )
-        self._flush_batch(lst, [await await_or_return(item) for item in data])
+        self._flush_batch(
+            lst, [await x if hasattr(x, "__await__") else x for x in data]
+        )
 
 
 class _FuncAsyncStrategy(BaseTaskStrategy):
     async def __call__(
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
-        self._flush_batch(lst, [await await_or_return(await target())])
+        result = await target()
+        if hasattr(result, "__await__"):
+            result = await result
+        self._flush_batch(lst, [result])
 
 
 class _FuncSyncStrategy(BaseTaskStrategy):
@@ -94,15 +93,10 @@ class _FuncSyncStrategy(BaseTaskStrategy):
         self, target: Any, lst: list[Any], batch_size: int, use_thread: bool
     ) -> None:
         result = await asyncio.to_thread(target) if use_thread else target()
-        self._flush_batch(lst, [await await_or_return(result)])
+        if hasattr(result, "__await__"):
+            result = await result
+        self._flush_batch(lst, [result])
 
-
-_BY_KIND: dict[int, BaseTaskStrategy] = {
-    0: get_instance(_FuncSyncStrategy),
-    inspect.CO_GENERATOR: get_instance(_FuncSyncGenStrategy),
-    inspect.CO_COROUTINE: get_instance(_FuncAsyncStrategy),
-    inspect.CO_ASYNC_GENERATOR: get_instance(_FuncAsyncGenStrategy),
-}
 
 _KIND_MASK = inspect.CO_GENERATOR | inspect.CO_COROUTINE | inspect.CO_ASYNC_GENERATOR
 
@@ -113,6 +107,14 @@ def code_kind(func: Any) -> int:
         func = func.func
     code = getattr(func, "__code__", None)
     return (code.co_flags if code is not None else 0) & _KIND_MASK
+
+
+_BY_KIND: dict[int, BaseTaskStrategy] = {
+    0: get_instance(_FuncSyncStrategy),
+    inspect.CO_GENERATOR: get_instance(_FuncSyncGenStrategy),
+    inspect.CO_COROUTINE: get_instance(_FuncAsyncStrategy),
+    inspect.CO_ASYNC_GENERATOR: get_instance(_FuncAsyncGenStrategy),
+}
 
 
 @singledispatch

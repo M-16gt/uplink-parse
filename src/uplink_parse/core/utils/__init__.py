@@ -1,13 +1,7 @@
 import inspect
 from typing import Any
 
-__all__ = ["to_list", "is_stateless", "await_or_return"]
-
-
-def to_list(obj: Any) -> list[Any] | tuple[Any, ...]:
-    if isinstance(obj, (list, tuple)):
-        return obj
-    return [obj] if obj is not None else []
+__all__ = ["is_stateless", "await_or_return"]
 
 
 _VAR_ARGS = inspect.CO_VARARGS | inspect.CO_VARKEYWORDS
